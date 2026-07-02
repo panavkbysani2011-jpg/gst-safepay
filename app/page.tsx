@@ -2,7 +2,9 @@ import { ComplianceDisclaimer } from "./_components/ComplianceDisclaimer";
 import { DataControls } from "./_components/DataControls";
 import { MoneyAtRiskHero } from "./_components/MoneyAtRiskHero";
 import { RiskActionList } from "./_components/RiskActionList";
+import { ImsClosePanel } from "./_components/ImsClosePanel";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { DEMO_IMS_ROWS, DEMO_IMS_ASOF } from "@/lib/rules/imsFixtures";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
 
@@ -67,6 +69,8 @@ export default async function Home() {
           </section>
         </>
       )}
+
+      <ImsClosePanel rows={DEMO_IMS_ROWS} asOf={DEMO_IMS_ASOF} />
 
       <DataControls />
     </div>
