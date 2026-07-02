@@ -5,8 +5,6 @@ import { RiskActionList } from "./_components/RiskActionList";
 import { ImsClosePanel } from "./_components/ImsClosePanel";
 import { RcmWatchPanel } from "./_components/RcmWatchPanel";
 import { getDashboardData } from "@/lib/data/dashboard";
-import { DEMO_IMS_ROWS, DEMO_IMS_ASOF } from "@/lib/rules/imsFixtures";
-import { DEMO_RCM_ROWS, DEMO_RCM_ASOF } from "@/lib/rules/rcmFixtures";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
 
@@ -72,9 +70,13 @@ export default async function Home() {
         </>
       )}
 
-      <ImsClosePanel rows={DEMO_IMS_ROWS} asOf={DEMO_IMS_ASOF} />
+      {data.totalImsInvoices > 0 && (
+        <ImsClosePanel rows={data.imsRows} asOf={data.imsAsOf} />
+      )}
 
-      <RcmWatchPanel rows={DEMO_RCM_ROWS} asOf={DEMO_RCM_ASOF} />
+      {data.totalRcmPurchases > 0 && (
+        <RcmWatchPanel rows={data.rcmRows} asOf={data.rcmAsOf} />
+      )}
 
       <DataControls />
     </div>

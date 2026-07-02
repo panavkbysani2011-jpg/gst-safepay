@@ -45,3 +45,39 @@ model Bill {
   @@id([ownerId, id])
   @@index([ownerId, vendorId])
 }
+
+// Module 2 — GST IMS (Invoice Management System) supplier invoices.
+// vendorName is denormalized (these suppliers need not exist in Vendor).
+model ImsInvoice {
+  ownerId      String
+  id           String
+  vendorId     String
+  vendorName   String
+  invoiceNo    String
+  taxPeriod    String // "YYYY-MM"
+  taxableValue Float
+  gstAmount    Float
+  imsAction    String // "accept" | "reject" | "pending" | "none"
+  eligibility  String // "eligible" | "ineligible" | "unsure"
+  createdAt    DateTime @default(now())
+
+  @@id([ownerId, id])
+}
+
+// Module 3 — RCM (Reverse Charge Mechanism) purchases.
+// vendorName is denormalized (unregistered suppliers need not exist in Vendor).
+model RcmPurchase {
+  ownerId              String
+  id                   String
+  vendorId             String
+  vendorName           String
+  supplierUnregistered Boolean
+  supplyType           String // "goods" | "services"
+  supplyDate           String // ISO date
+  rcmTaxAmount         Float
+  selfInvoiceIssued    Boolean  @default(false)
+  rcmTaxPaidDate       String? // ISO date or null
+  createdAt            DateTime @default(now())
+
+  @@id([ownerId, id])
+}

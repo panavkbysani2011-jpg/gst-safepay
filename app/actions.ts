@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { parseBillsCsv, parseVendorsCsv } from "@/lib/csv/parseCsv";
 import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
+import { DEMO_IMS_ROWS } from "@/lib/rules/imsFixtures";
+import { DEMO_RCM_ROWS } from "@/lib/rules/rcmFixtures";
 
 export interface UploadResult {
   ok: boolean;
@@ -143,6 +145,38 @@ export async function seedDemoData(): Promise<void> {
       },
     });
   }
+  for (const { invoice, vendorName } of DEMO_IMS_ROWS) {
+    await db.imsInvoice.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: invoice.id } },
+      create: { ...invoice, vendorName, ownerId: user.id },
+      update: {
+        vendorId: invoice.vendorId,
+        vendorName,
+        invoiceNo: invoice.invoiceNo,
+        taxPeriod: invoice.taxPeriod,
+        taxableValue: invoice.taxableValue,
+        gstAmount: invoice.gstAmount,
+        imsAction: invoice.imsAction,
+        eligibility: invoice.eligibility,
+      },
+    });
+  }
+  for (const { purchase, vendorName } of DEMO_RCM_ROWS) {
+    await db.rcmPurchase.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: purchase.id } },
+      create: { ...purchase, vendorName, ownerId: user.id },
+      update: {
+        vendorId: purchase.vendorId,
+        vendorName,
+        supplierUnregistered: purchase.supplierUnregistered,
+        supplyType: purchase.supplyType,
+        supplyDate: purchase.supplyDate,
+        rcmTaxAmount: purchase.rcmTaxAmount,
+        selfInvoiceIssued: purchase.selfInvoiceIssued,
+        rcmTaxPaidDate: purchase.rcmTaxPaidDate,
+      },
+    });
+  }
   revalidatePath("/");
 }
 
@@ -150,5 +184,7 @@ export async function clearData(): Promise<void> {
   const user = await requireUser();
   await db.bill.deleteMany({ where: { ownerId: user.id } });
   await db.vendor.deleteMany({ where: { ownerId: user.id } });
+  await db.imsInvoice.deleteMany({ where: { ownerId: user.id } });
+  await db.rcmPurchase.deleteMany({ where: { ownerId: user.id } });
   revalidatePath("/");
 }
