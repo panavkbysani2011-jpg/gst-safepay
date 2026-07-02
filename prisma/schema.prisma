@@ -2,6 +2,9 @@
 // Money is stored as Float (rupees) for the prototype; switch to integer paise
 // or Decimal before handling real money. Dates are ISO "YYYY-MM-DD" strings to
 // match the deterministic rule engine in lib/rules.
+// Multi-tenant: every row is scoped by ownerId (the Supabase auth user id).
+// Composite primary key (ownerId, id) isolates each account's data and lets two
+// accounts each use the same business id (e.g. "v1") without colliding.
 
 generator client {
   provider = "prisma-client-js"
@@ -14,7 +17,8 @@ datasource db {
 }
 
 model Vendor {
-  id              String   @id
+  ownerId         String
+  id              String
   name            String
   gstin           String
   gstinActive     Boolean  @default(true)
@@ -22,11 +26,14 @@ model Vendor {
   udyamCategory   String? // "micro" | "small" | "medium" | null
   bills           Bill[]
   createdAt       DateTime @default(now())
+
+  @@id([ownerId, id])
 }
 
 model Bill {
-  id                    String   @id
-  vendor                Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  ownerId               String
+  id                    String
+  vendor                Vendor   @relation(fields: [ownerId, vendorId], references: [ownerId, id], onDelete: Cascade)
   vendorId              String
   invoiceAcceptanceDate String // ISO date
   amount                Float
@@ -35,5 +42,6 @@ model Bill {
   paidDate              String? // ISO date or null
   createdAt             DateTime @default(now())
 
-  @@index([vendorId])
+  @@id([ownerId, id])
+  @@index([ownerId, vendorId])
 }

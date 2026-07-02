@@ -3,14 +3,17 @@ import { DataControls } from "./_components/DataControls";
 import { MoneyAtRiskHero } from "./_components/MoneyAtRiskHero";
 import { RiskActionList } from "./_components/RiskActionList";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { requireUser } from "@/lib/auth";
+import { signOut } from "./auth-actions";
 
 export default async function Home() {
-  const data = await getDashboardData();
+  const user = await requireUser();
+  const data = await getDashboardData(user.id);
   const isEmpty = data.totalVendors === 0 && data.totalBills === 0;
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-wrap items-baseline justify-between gap-2">
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline gap-2">
             <h1 className="text-xl font-semibold text-slate-100">GST SafePay</h1>
@@ -22,9 +25,22 @@ export default async function Home() {
             MSME payment-safety cockpit — as of {data.asOf}
           </p>
         </div>
-        <p className="text-xs text-slate-500">
-          {data.totalVendors} vendor(s) · {data.totalBills} bill(s) tracked
-        </p>
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400">{user.email}</span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/60"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+          <p className="text-xs text-slate-500">
+            {data.totalVendors} vendor(s) · {data.totalBills} bill(s) tracked
+          </p>
+        </div>
       </header>
 
       <ComplianceDisclaimer />

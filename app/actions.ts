@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 import { parseBillsCsv, parseVendorsCsv } from "@/lib/csv/parseCsv";
 import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
 
@@ -29,15 +30,22 @@ export async function uploadVendorsCsv(
   _prev: UploadResult | null,
   formData: FormData
 ): Promise<UploadResult> {
+  const user = await requireUser();
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
   const { valid, errors } = parseVendorsCsv(text);
-  for (const vendor of valid) {
+  for (const v of valid) {
     await db.vendor.upsert({
-      where: { id: vendor.id },
-      create: vendor,
-      update: vendor,
+      where: { ownerId_id: { ownerId: user.id, id: v.id } },
+      create: { ...v, ownerId: user.id },
+      update: {
+        name: v.name,
+        gstin: v.gstin,
+        gstinActive: v.gstinActive,
+        udyamRegistered: v.udyamRegistered,
+        udyamCategory: v.udyamCategory,
+      },
     });
   }
 
@@ -56,29 +64,41 @@ export async function uploadBillsCsv(
   _prev: UploadResult | null,
   formData: FormData
 ): Promise<UploadResult> {
+  const user = await requireUser();
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
   const { valid, errors } = parseBillsCsv(text);
-
   const knownVendorIds = new Set(
-    (await db.vendor.findMany({ select: { id: true } })).map((v) => v.id)
+    (
+      await db.vendor.findMany({
+        where: { ownerId: user.id },
+        select: { id: true },
+      })
+    ).map((v) => v.id)
   );
 
   let inserted = 0;
   const allErrors = [...errors];
-  for (const bill of valid) {
-    if (!knownVendorIds.has(bill.vendorId)) {
+  for (const b of valid) {
+    if (!knownVendorIds.has(b.vendorId)) {
       allErrors.push({
         row: 0,
-        message: `bill ${bill.id}: unknown vendorId "${bill.vendorId}" — upload that vendor first`,
+        message: `bill ${b.id}: unknown vendorId "${b.vendorId}" — upload that vendor first`,
       });
       continue;
     }
     await db.bill.upsert({
-      where: { id: bill.id },
-      create: bill,
-      update: bill,
+      where: { ownerId_id: { ownerId: user.id, id: b.id } },
+      create: { ...b, ownerId: user.id },
+      update: {
+        vendorId: b.vendorId,
+        invoiceAcceptanceDate: b.invoiceAcceptanceDate,
+        amount: b.amount,
+        hasWrittenAgreement: b.hasWrittenAgreement,
+        agreedPaymentDays: b.agreedPaymentDays,
+        paidDate: b.paidDate,
+      },
     });
     inserted += 1;
   }
@@ -95,25 +115,40 @@ export async function uploadBillsCsv(
 }
 
 export async function seedDemoData(): Promise<void> {
-  for (const vendor of DEMO_VENDORS) {
+  const user = await requireUser();
+  for (const v of DEMO_VENDORS) {
     await db.vendor.upsert({
-      where: { id: vendor.id },
-      create: vendor,
-      update: vendor,
+      where: { ownerId_id: { ownerId: user.id, id: v.id } },
+      create: { ...v, ownerId: user.id },
+      update: {
+        name: v.name,
+        gstin: v.gstin,
+        gstinActive: v.gstinActive,
+        udyamRegistered: v.udyamRegistered,
+        udyamCategory: v.udyamCategory,
+      },
     });
   }
-  for (const bill of DEMO_BILLS) {
+  for (const b of DEMO_BILLS) {
     await db.bill.upsert({
-      where: { id: bill.id },
-      create: bill,
-      update: bill,
+      where: { ownerId_id: { ownerId: user.id, id: b.id } },
+      create: { ...b, ownerId: user.id },
+      update: {
+        vendorId: b.vendorId,
+        invoiceAcceptanceDate: b.invoiceAcceptanceDate,
+        amount: b.amount,
+        hasWrittenAgreement: b.hasWrittenAgreement,
+        agreedPaymentDays: b.agreedPaymentDays,
+        paidDate: b.paidDate,
+      },
     });
   }
   revalidatePath("/");
 }
 
 export async function clearData(): Promise<void> {
-  await db.bill.deleteMany();
-  await db.vendor.deleteMany();
+  const user = await requireUser();
+  await db.bill.deleteMany({ where: { ownerId: user.id } });
+  await db.vendor.deleteMany({ where: { ownerId: user.id } });
   revalidatePath("/");
 }

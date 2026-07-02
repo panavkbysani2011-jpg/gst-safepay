@@ -28,10 +28,10 @@ function todayIso(): string {
 }
 
 /** Reads vendors + bills from the DB and runs the deterministic rule engine over them. */
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(ownerId: string): Promise<DashboardData> {
   const [vendorRows, billRows] = await Promise.all([
-    db.vendor.findMany(),
-    db.bill.findMany(),
+    db.vendor.findMany({ where: { ownerId } }),
+    db.bill.findMany({ where: { ownerId } }),
   ]);
 
   const vendorsById = new Map(vendorRows.map((v) => [v.id, v]));
