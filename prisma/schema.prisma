@@ -1,0 +1,38 @@
+// GST SafePay — data model.
+// Money is stored as Float (rupees) for the prototype; switch to integer paise
+// or Decimal before handling real money. Dates are ISO "YYYY-MM-DD" strings to
+// match the deterministic rule engine in lib/rules.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id              String   @id
+  name            String
+  gstin           String
+  gstinActive     Boolean  @default(true)
+  udyamRegistered Boolean  @default(false)
+  udyamCategory   String? // "micro" | "small" | "medium" | null
+  bills           Bill[]
+  createdAt       DateTime @default(now())
+}
+
+model Bill {
+  id                    String   @id
+  vendor                Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  vendorId              String
+  invoiceAcceptanceDate String // ISO date
+  amount                Float
+  hasWrittenAgreement   Boolean  @default(true)
+  agreedPaymentDays     Int?
+  paidDate              String? // ISO date or null
+  createdAt             DateTime @default(now())
+
+  @@index([vendorId])
+}

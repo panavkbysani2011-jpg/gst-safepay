@@ -1,0 +1,6 @@
+id,name,gstin,gstinActive,udyamRegistered,udyamCategory
+v-steelworks,Bharath Steelworks,29AACCB1234F1Z5,true,true,micro
+v-packaging,Sundar Packaging Co,29AAECS5678G1Z2,true,true,small
+v-logistics,Metro Logistics,29AADCM4321H1Z9,true,true,small
+v-enterprise,Apex Industrial Supplies,29AAFCA9988J1Z3,true,true,medium
+v-nonmsme,Global Traders LLP,29AAGCT5566K1Z1,true,false,

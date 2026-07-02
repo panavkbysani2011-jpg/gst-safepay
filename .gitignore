@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -42,3 +43,9 @@ next-env.d.ts
 
 # impeccable design-hook local cache
 .impeccable/
+
+/lib/generated/prisma
+
+# local SQLite database (dev only; production uses a cloud Postgres)
+prisma/*.db
+prisma/*.db-journal
