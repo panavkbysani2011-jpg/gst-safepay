@@ -3,8 +3,10 @@ import { DataControls } from "./_components/DataControls";
 import { MoneyAtRiskHero } from "./_components/MoneyAtRiskHero";
 import { RiskActionList } from "./_components/RiskActionList";
 import { ImsClosePanel } from "./_components/ImsClosePanel";
+import { RcmWatchPanel } from "./_components/RcmWatchPanel";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { DEMO_IMS_ROWS, DEMO_IMS_ASOF } from "@/lib/rules/imsFixtures";
+import { DEMO_RCM_ROWS, DEMO_RCM_ASOF } from "@/lib/rules/rcmFixtures";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
 
@@ -71,6 +73,8 @@ export default async function Home() {
       )}
 
       <ImsClosePanel rows={DEMO_IMS_ROWS} asOf={DEMO_IMS_ASOF} />
+
+      <RcmWatchPanel rows={DEMO_RCM_ROWS} asOf={DEMO_RCM_ASOF} />
 
       <DataControls />
     </div>

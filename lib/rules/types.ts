@@ -140,3 +140,102 @@ export interface ImsCloseSummary {
   /** Earliest still-open cutoff among unactioned invoices, or null if nothing is actionable. */
   nextCutoffDate: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Module 3 — RCM (Reverse Charge Mechanism) Rule 47A watchdog
+//
+// On reverse-charge purchases the BUYER owes the GST (in CASH — it cannot be
+// paid with ITC). Two silent, money-losing deadlines:
+//   1. Rule 47A (from 1 Nov 2024): when the supplier is UNREGISTERED, the buyer
+//      must issue a self-invoice within 30 days of the supply, else a s.122
+//      penalty (₹10,000 or the tax, whichever higher).
+//   2. The RCM tax must be paid in cash by the GSTR-3B due date for the period
+//      of the "time of supply"; late payment attracts GST s.50 interest (18%).
+// This module surfaces both deadlines and sizes the cash + interest + penalty.
+// ---------------------------------------------------------------------------
+
+export type RcmSupplyType = "goods" | "services";
+
+export interface RcmPurchase {
+  id: string;
+  vendorId: string;
+  /** True if the supplier is unregistered — then Rule 47A self-invoice (30 days) applies. */
+  supplierUnregistered: boolean;
+  supplyType: RcmSupplyType;
+  /** Date the goods/services were received (the invoice/receipt date) — drives both clocks. */
+  supplyDate: string;
+  /** GST the buyer owes under reverse charge — must be paid in CASH. */
+  rcmTaxAmount: number;
+  /** Has the buyer issued the self-invoice required under s.31(3)(f)? */
+  selfInvoiceIssued: boolean;
+  /** Date the RCM tax was actually paid (via the GSTR-3B cash ledger), if paid. */
+  rcmTaxPaidDate: string | null;
+}
+
+export interface RcmRuleConfig {
+  /** Rule 47A: self-invoice must be issued within this many days of supply (unregistered supplier). VERIFY with a CA. */
+  selfInvoiceDays: number;
+  /** Time-of-supply cap (days from supply) for goods RCM — s.12(3). VERIFY. */
+  timeOfSupplyDaysGoods: number;
+  /** Time-of-supply cap (days from supply) for services RCM — s.13(3). VERIFY. */
+  timeOfSupplyDaysServices: number;
+  /** RCM cash tax is due on this day of the month AFTER the tax period (GSTR-3B). VERIFY. */
+  gstr3bDueDayOfNextMonth: number;
+  /** GST s.50 interest rate (% p.a.) on late RCM tax. VERIFY the current rate with a CA. */
+  latePaymentInterestRatePercent: number;
+  /** s.122 penalty for a missed self-invoice (₹10,000 or the tax, whichever higher — simplified to a flat default). VERIFY. */
+  lateSelfInvoicePenalty: number;
+  /** Warning window (days) before a deadline. */
+  dueSoonWindowDays: number;
+}
+
+export const DEFAULT_RCM_RULE_CONFIG: RcmRuleConfig = {
+  selfInvoiceDays: 30,
+  timeOfSupplyDaysGoods: 30,
+  timeOfSupplyDaysServices: 60,
+  gstr3bDueDayOfNextMonth: 20,
+  latePaymentInterestRatePercent: 18,
+  lateSelfInvoicePenalty: 10000,
+  dueSoonWindowDays: 7,
+};
+
+export type RcmSelfInvoiceStatus =
+  | "not-applicable"
+  | "issued"
+  | "safe"
+  | "due-soon"
+  | "overdue";
+
+export type RcmPaymentStatus =
+  | "paid-on-time"
+  | "paid-late"
+  | "safe"
+  | "due-soon"
+  | "overdue";
+
+export interface RcmAssessment {
+  purchaseId: string;
+  selfInvoiceApplicable: boolean;
+  selfInvoiceDeadline: string | null;
+  selfInvoiceStatus: RcmSelfInvoiceStatus;
+  timeOfSupply: string;
+  rcmPaymentDueDate: string;
+  rcmPaymentStatus: RcmPaymentStatus;
+  /** Cash GST still owed under RCM (0 once paid). */
+  rcmTaxDueInCash: number;
+  /** GST s.50 interest for late RCM tax payment. */
+  projectedInterestCost: number;
+  /** s.122 penalty exposure for a missed self-invoice. */
+  penaltyExposure: number;
+  /** Hard money loss if unresolved: interest + penalty (the tax itself is owed regardless). */
+  totalExposure: number;
+}
+
+export interface RcmSummary {
+  totalPurchases: number;
+  selfInvoicesOverdueCount: number;
+  /** Total cash GST still owed under RCM across all unpaid purchases. */
+  totalRcmCashDue: number;
+  totalInterestExposure: number;
+  totalPenaltyExposure: number;
+}
