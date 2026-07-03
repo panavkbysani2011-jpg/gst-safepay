@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Sora, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -20,6 +25,9 @@ export const metadata: Metadata = {
     "Prevents money loss from India's MSME 45-day payment rule, GST IMS deadlines, and reverse-charge misses.",
 };
 
+// Sets the theme before first paint so there is no flash of the wrong theme.
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'&&t!=='paper'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,11 +36,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${plexMono.variable} dark h-full antialiased`}
+      suppressHydrationWarning
+      className={`${sora.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#06080d] text-slate-100">
-        {children}
-      </body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-full bg-canvas font-sans text-fg">{children}</body>
     </html>
   );
 }

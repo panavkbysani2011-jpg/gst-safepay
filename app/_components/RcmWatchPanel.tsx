@@ -6,6 +6,8 @@ import {
   type RcmSelfInvoiceStatus,
 } from "@/lib/rules/types";
 import type { DemoRcmRow } from "@/lib/rules/rcmFixtures";
+import { PanelHeader, StatCard } from "./ui";
+import { TONE_BADGE, TONE_CARD, type Tone } from "./tone";
 
 type Props = {
   rows: DemoRcmRow[];
@@ -15,56 +17,21 @@ type Props = {
 const BADGE_BASE =
   "inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase";
 
-const SELF_INVOICE_BADGE: Record<
-  RcmSelfInvoiceStatus,
-  { label: string; cls: string }
-> = {
-  "not-applicable": {
-    label: "Self-inv N/A",
-    cls: "bg-slate-800 text-slate-500 border-slate-700",
-  },
-  issued: {
-    label: "Self-inv done",
-    cls: "bg-emerald-950 text-emerald-300 border-emerald-800",
-  },
-  safe: {
-    label: "Self-inv ok",
-    cls: "bg-slate-800 text-slate-300 border-slate-700",
-  },
-  "due-soon": {
-    label: "Self-inv due",
-    cls: "bg-amber-950 text-amber-300 border-amber-800",
-  },
-  overdue: {
-    label: "Self-inv overdue",
-    cls: "bg-red-950 text-red-300 border-red-800",
-  },
-};
+const SELF_INVOICE: Record<RcmSelfInvoiceStatus, { label: string; tone: Tone }> =
+  {
+    "not-applicable": { label: "Self-inv N/A", tone: "neutral" },
+    issued: { label: "Self-inv done", tone: "success" },
+    safe: { label: "Self-inv ok", tone: "neutral" },
+    "due-soon": { label: "Self-inv due", tone: "warning" },
+    overdue: { label: "Self-inv overdue", tone: "danger" },
+  };
 
-const PAYMENT_BADGE: Record<
-  RcmPaymentStatus,
-  { label: string; cls: string }
-> = {
-  "paid-on-time": {
-    label: "Tax paid",
-    cls: "bg-emerald-950 text-emerald-300 border-emerald-800",
-  },
-  "paid-late": {
-    label: "Tax paid late",
-    cls: "bg-red-950 text-red-300 border-red-800",
-  },
-  safe: {
-    label: "Tax scheduled",
-    cls: "bg-slate-800 text-slate-300 border-slate-700",
-  },
-  "due-soon": {
-    label: "Tax due soon",
-    cls: "bg-amber-950 text-amber-300 border-amber-800",
-  },
-  overdue: {
-    label: "Tax overdue",
-    cls: "bg-red-950 text-red-300 border-red-800",
-  },
+const PAYMENT: Record<RcmPaymentStatus, { label: string; tone: Tone }> = {
+  "paid-on-time": { label: "Tax paid", tone: "success" },
+  "paid-late": { label: "Tax paid late", tone: "danger" },
+  safe: { label: "Tax scheduled", tone: "neutral" },
+  "due-soon": { label: "Tax due soon", tone: "warning" },
+  overdue: { label: "Tax overdue", tone: "danger" },
 };
 
 export function RcmWatchPanel({ rows, asOf }: Props) {
@@ -73,44 +40,31 @@ export function RcmWatchPanel({ rows, asOf }: Props) {
     asOf,
     DEFAULT_RCM_RULE_CONFIG
   );
-  const exposure =
-    summary.totalInterestExposure + summary.totalPenaltyExposure;
+  const exposure = summary.totalInterestExposure + summary.totalPenaltyExposure;
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium tracking-wide text-slate-300 uppercase">
-          RCM self-invoice & cash-tax watch
-        </h2>
-        <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-slate-500 uppercase">
-          Preview · synthetic data
-        </span>
-      </div>
+      <PanelHeader
+        title="RCM self-invoice & cash-tax watch"
+        tag="Preview · synthetic data"
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-sky-900/60 bg-gradient-to-br from-sky-950/50 to-[#0f1420] p-6">
-          <p className="text-xs font-medium tracking-widest text-sky-300/80 uppercase">
-            RCM GST owed in cash
-          </p>
-          <p className="mt-2 font-mono text-4xl font-semibold text-sky-200 tabular-nums">
-            {formatINR(summary.totalRcmCashDue)}
-          </p>
-          <p className="mt-2 text-sm text-slate-400">
-            Reverse-charge tax you must pay in cash (cannot be set off with ITC).
-          </p>
-        </div>
-        <div className="rounded-2xl border border-red-900/60 bg-gradient-to-br from-red-950/60 to-[#0f1420] p-6">
-          <p className="text-xs font-medium tracking-widest text-red-300/80 uppercase">
-            Interest + penalty exposure
-          </p>
-          <p className="mt-2 font-mono text-4xl font-semibold text-red-200 tabular-nums">
-            {formatINR(exposure)}
-          </p>
-          <p className="mt-2 text-sm text-slate-400">
-            {summary.selfInvoicesOverdueCount} self-invoice(s) overdue (s.122
-            penalty) + s.50 interest on late RCM tax.
-          </p>
-        </div>
+        <StatCard
+          eyebrow="RCM GST owed in cash"
+          tone="info"
+          value={formatINR(summary.totalRcmCashDue)}
+        >
+          Reverse-charge tax you must pay in cash (cannot be set off with ITC).
+        </StatCard>
+        <StatCard
+          eyebrow="Interest + penalty exposure"
+          tone="danger"
+          value={formatINR(exposure)}
+        >
+          {summary.selfInvoicesOverdueCount} self-invoice(s) overdue (s.122
+          penalty) + s.50 interest on late RCM tax.
+        </StatCard>
       </div>
 
       <ul className="flex flex-col gap-2">
@@ -120,28 +74,26 @@ export function RcmWatchPanel({ rows, asOf }: Props) {
             a.selfInvoiceStatus === "overdue" ||
             a.rcmPaymentStatus === "overdue" ||
             a.rcmPaymentStatus === "paid-late";
-          const self = SELF_INVOICE_BADGE[a.selfInvoiceStatus];
-          const pay = PAYMENT_BADGE[a.rcmPaymentStatus];
+          const self = SELF_INVOICE[a.selfInvoiceStatus];
+          const pay = PAYMENT[a.rcmPaymentStatus];
           return (
             <li
               key={purchase.id}
-              className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
-                alarmed
-                  ? "bg-red-500/[0.06] border-red-900/50"
-                  : "border-slate-800 bg-[#0f1420]"
+              className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors duration-150 hover:border-border-strong sm:flex-row sm:items-center sm:justify-between ${
+                alarmed ? TONE_CARD.danger : "border-border bg-surface"
               }`}
             >
               <div className="flex flex-col gap-1.5">
-                <span className="font-medium text-slate-100">{vendorName}</span>
+                <span className="font-medium text-fg">{vendorName}</span>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`${BADGE_BASE} ${self.cls}`}>
+                  <span className={`${BADGE_BASE} ${TONE_BADGE[self.tone]}`}>
                     {self.label}
                   </span>
-                  <span className={`${BADGE_BASE} ${pay.cls}`}>
+                  <span className={`${BADGE_BASE} ${TONE_BADGE[pay.tone]}`}>
                     {pay.label}
                   </span>
                 </div>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-muted">
                   {purchase.supplyType} · RCM tax due {a.rcmPaymentDueDate}
                   {a.selfInvoiceDeadline
                     ? ` · self-invoice by ${a.selfInvoiceDeadline}`
@@ -149,10 +101,10 @@ export function RcmWatchPanel({ rows, asOf }: Props) {
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="font-mono text-lg font-semibold text-slate-100 tabular-nums">
+                <p className="tnum font-mono text-lg font-semibold text-fg">
                   {formatINR(purchase.rcmTaxAmount)}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-faint">
                   {a.totalExposure > 0
                     ? `+ ${formatINR(a.totalExposure)} interest/penalty`
                     : "RCM tax"}

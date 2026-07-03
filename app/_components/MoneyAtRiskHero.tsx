@@ -11,25 +11,25 @@ export function MoneyAtRiskHero({
 }: Props) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      <div className="rounded-2xl border border-red-900/60 bg-gradient-to-br from-red-950/60 to-[#0f1420] p-6">
-        <p className="text-xs font-medium tracking-widest text-red-300/80 uppercase">
+      <div className="animate-rise rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)] transition-colors">
+        <p className="text-xs font-medium tracking-[0.12em] text-danger uppercase">
           Money already at risk
         </p>
-        <p className="mt-2 font-mono text-4xl font-semibold text-red-200 tabular-nums">
+        <p className="tnum mt-2 font-mono text-4xl font-semibold text-danger">
           {formatINR(moneyAlreadyAtRisk)}
         </p>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-muted">
           Lost tax deductions + MSMED penalty interest on breached payments.
         </p>
       </div>
-      <div className="rounded-2xl border border-amber-900/60 bg-gradient-to-br from-amber-950/50 to-[#0f1420] p-6">
-        <p className="text-xs font-medium tracking-widest text-amber-300/80 uppercase">
+      <div className="animate-rise rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)] transition-colors">
+        <p className="text-xs font-medium tracking-[0.12em] text-warning uppercase">
           Bills needing action this week
         </p>
-        <p className="mt-2 font-mono text-4xl font-semibold text-amber-200 tabular-nums">
+        <p className="tnum mt-2 font-mono text-4xl font-semibold text-warning">
           {billsNeedingActionThisWeek}
         </p>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-muted">
           Approaching their 45/15-day payment deadline within 7 days.
         </p>
       </div>

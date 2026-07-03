@@ -6,6 +6,8 @@ import { ImsClosePanel } from "./_components/ImsClosePanel";
 import { RcmWatchPanel } from "./_components/RcmWatchPanel";
 import { VendorVerificationPanel } from "./_components/VendorVerificationPanel";
 import { CompliancePanel } from "./_components/CompliancePanel";
+import { ThemeToggle } from "./_components/ThemeToggle";
+import { SectionHeading } from "./_components/ui";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
@@ -16,32 +18,43 @@ export default async function Home() {
   const isEmpty = data.totalVendors === 0 && data.totalBills === 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10">
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-xl font-semibold text-slate-100">GST SafePay</h1>
-            <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-slate-400 uppercase">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden
+              className="grid size-8 place-items-center rounded-lg bg-accent text-sm font-bold text-accent-fg"
+            >
+              ₹
+            </span>
+            <h1 className="font-display text-lg font-semibold text-fg">
+              GST SafePay
+            </h1>
+            <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-faint uppercase">
               Prototype
             </span>
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted">
             MSME payment-safety cockpit — as of {data.asOf}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
+        <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">{user.email}</span>
+            <ThemeToggle />
+            <span className="hidden text-xs text-muted sm:inline">
+              {user.email}
+            </span>
             <form action={signOut}>
               <button
                 type="submit"
-                className="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-800/60"
+                className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 Sign out
               </button>
             </form>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-faint">
             {data.totalVendors} vendor(s) · {data.totalBills} bill(s) tracked
           </p>
         </div>
@@ -50,9 +63,9 @@ export default async function Home() {
       <ComplianceDisclaimer />
 
       {isEmpty ? (
-        <div className="rounded-2xl border border-dashed border-slate-700 bg-[#0b0f18] p-10 text-center">
-          <p className="text-slate-300">No data yet.</p>
-          <p className="mt-1 text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-border-strong bg-surface p-10 text-center">
+          <p className="font-medium text-fg">No data yet.</p>
+          <p className="mt-1 text-sm text-muted">
             Load the demo data to see how it works, or upload your own vendor and
             bill CSVs below.
           </p>
@@ -64,9 +77,7 @@ export default async function Home() {
             billsNeedingActionThisWeek={data.billsNeedingActionThisWeek}
           />
           <section className="flex flex-col gap-3">
-            <h2 className="text-sm font-medium tracking-wide text-slate-300 uppercase">
-              Who to pay first
-            </h2>
+            <SectionHeading>Who to pay first</SectionHeading>
             <RiskActionList risks={data.ranked} />
           </section>
         </>

@@ -1,4 +1,5 @@
 import type { PaymentStatus } from "@/lib/rules/types";
+import { TONE_BADGE, type Tone } from "./tone";
 
 type Props = {
   status: PaymentStatus;
@@ -13,19 +14,19 @@ const LABELS: Record<PaymentStatus, string> = {
   "paid-late": "Paid late",
 };
 
-const CLASSES: Record<PaymentStatus, string> = {
-  "not-applicable": "bg-slate-800 text-slate-400 border-slate-700",
-  safe: "bg-emerald-950 text-emerald-300 border-emerald-800",
-  "due-soon": "bg-amber-950 text-amber-300 border-amber-800",
-  breached: "bg-red-950 text-red-300 border-red-800",
-  "paid-on-time": "bg-emerald-950 text-emerald-300 border-emerald-800",
-  "paid-late": "bg-red-950 text-red-300 border-red-800",
+const TONE: Record<PaymentStatus, Tone> = {
+  "not-applicable": "neutral",
+  safe: "success",
+  "due-soon": "warning",
+  breached: "danger",
+  "paid-on-time": "success",
+  "paid-late": "danger",
 };
 
 export function StatusBadge({ status }: Props) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase ${CLASSES[status]}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase ${TONE_BADGE[TONE[status]]}`}
     >
       {LABELS[status]}
     </span>

@@ -1,6 +1,7 @@
 import { formatINR } from "@/lib/format";
 import type { PaymentRiskAssessment } from "@/lib/rules/types";
 import { StatusBadge } from "./StatusBadge";
+import { TONE_CARD, type Tone } from "./tone";
 
 type RankedRisk = PaymentRiskAssessment & {
   vendorName: string;
@@ -11,10 +12,10 @@ type Props = {
   risks: RankedRisk[];
 };
 
-const CARD_TINT_BY_STATUS: Record<string, string> = {
-  breached: "bg-red-500/[0.06] border-red-900/50",
-  "paid-late": "bg-red-500/[0.06] border-red-900/50",
-  "due-soon": "bg-amber-500/[0.05] border-amber-900/40",
+const CARD_TONE: Record<string, Tone> = {
+  breached: "danger",
+  "paid-late": "danger",
+  "due-soon": "warning",
 };
 
 function daysLabel(daysRemaining: number | null): string {
@@ -27,9 +28,8 @@ function daysLabel(daysRemaining: number | null): string {
 export function RiskActionList({ risks }: Props) {
   if (risks.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-800 bg-[#0f1420] p-8 text-center text-slate-400">
-        Nothing needs action right now — every tracked bill is safe or
-        settled.
+      <div className="rounded-xl border border-border bg-surface p-8 text-center text-muted">
+        Nothing needs action right now — every tracked bill is safe or settled.
       </div>
     );
   }
@@ -39,28 +39,25 @@ export function RiskActionList({ risks }: Props) {
       {risks.map((risk) => (
         <li
           key={risk.billId}
-          className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
-            CARD_TINT_BY_STATUS[risk.status] ??
-            "border-slate-800 bg-[#0f1420]"
+          className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors duration-150 hover:border-border-strong sm:flex-row sm:items-center sm:justify-between ${
+            TONE_CARD[CARD_TONE[risk.status] ?? "neutral"]
           }`}
         >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-slate-100">
-                {risk.vendorName}
-              </span>
+              <span className="font-medium text-fg">{risk.vendorName}</span>
               <StatusBadge status={risk.status} />
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted">
               {formatINR(risk.amount)} · due {risk.dueDate} ·{" "}
               {daysLabel(risk.daysRemaining)}
             </p>
           </div>
           <div className="text-left sm:text-right">
-            <p className="font-mono text-lg font-semibold text-slate-100 tabular-nums">
+            <p className="tnum font-mono text-lg font-semibold text-fg">
               {formatINR(risk.totalCostOfDelay)}
             </p>
-            <p className="text-xs text-slate-500">cost if unresolved</p>
+            <p className="text-xs text-faint">cost if unresolved</p>
           </div>
         </li>
       ))}

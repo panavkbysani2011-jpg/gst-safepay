@@ -28,13 +28,13 @@ function PlainSubmit({
   const { pending } = useFormStatus();
   const toneClass =
     tone === "danger"
-      ? "border-red-900/60 text-red-300 hover:bg-red-950/40"
-      : "border-slate-700 text-slate-200 hover:bg-slate-800/60";
+      ? "border-danger/40 text-danger hover:bg-danger-soft"
+      : "border-border-strong text-fg hover:bg-surface-2";
   return (
     <button
       type="submit"
       disabled={pending}
-      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${toneClass}`}
+      className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-[background-color,transform] duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50 ${toneClass}`}
     >
       {pending ? "Working…" : children}
     </button>
@@ -44,11 +44,11 @@ function PlainSubmit({
 function ResultView({ state }: { state: UploadResult }) {
   return (
     <div className="mt-2 text-sm">
-      <p className={state.ok ? "text-emerald-300" : "text-amber-300"}>
+      <p className={state.ok ? "text-success" : "text-warning"}>
         {state.message}
       </p>
       {state.errors.length > 0 && (
-        <ul className="mt-1 list-inside list-disc text-xs text-slate-400">
+        <ul className="mt-1 list-inside list-disc text-xs text-muted">
           {state.errors.slice(0, 5).map((e, i) => (
             <li key={i}>
               {e.row > 0 ? `Row ${e.row}: ` : ""}
@@ -77,8 +77,8 @@ function UploadForm({
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <div>
-        <p className="text-sm font-medium text-slate-200">{label}</p>
-        <p className="font-mono text-[11px] text-slate-500">{columns}</p>
+        <p className="text-sm font-medium text-fg">{label}</p>
+        <p className="font-mono text-[11px] text-faint">{columns}</p>
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -86,12 +86,12 @@ function UploadForm({
           name="file"
           accept=".csv,text/csv"
           required
-          className="max-w-full text-xs text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-1.5 file:text-slate-200 hover:file:bg-slate-700"
+          className="max-w-full text-xs text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-fg hover:file:bg-border"
         />
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-800/60 disabled:opacity-50"
+          className="shrink-0 rounded-lg border border-border-strong px-3 py-1.5 text-sm font-medium text-fg transition-[background-color,transform] duration-150 hover:bg-surface-2 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
         >
           {pending ? "Uploading…" : "Upload"}
         </button>
@@ -103,9 +103,9 @@ function UploadForm({
 
 export function DataControls() {
   return (
-    <section className="flex flex-col gap-5 rounded-2xl border border-slate-800 bg-[#0b0f18] p-5">
+    <section className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-5 shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-medium tracking-wide text-slate-300 uppercase">
+        <h2 className="text-xs font-semibold tracking-[0.12em] text-muted uppercase">
           Your data
         </h2>
         <div className="flex gap-2">

@@ -1,18 +1,161 @@
 @import "tailwindcss";
 
-:root {
-  --background: #06080d;
-  --foreground: #e7ecf5;
-}
-
+/* ─── Semantic tokens → Tailwind v4 utilities (bg-canvas, text-muted, border-border, …) ─── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-plex-sans);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-text: var(--accent-text);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-ring: var(--accent);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-sora);
   --font-mono: var(--font-plex-mono);
 }
 
+/* ─── Light (default) ─── */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #e4e7ec;
+  --border-strong: #cfd4dc;
+  --fg: #101828;
+  --muted: #5b6472;
+  --faint: #98a2b3;
+  --accent: #0f766e;
+  --accent-fg: #ffffff;
+  --accent-text: #0f766e;
+  --accent-soft: #e3f2ef;
+  --success: #0a7c4a;
+  --success-soft: #e5f4ec;
+  --warning: #8a6100;
+  --warning-soft: #f8efd9;
+  --danger: #ad3f3f;
+  --danger-soft: #f6e8e8;
+  --info: #1f6feb;
+  --info-soft: #e8f0fe;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.1);
+  --ledger: transparent;
+}
+
+/* ─── Dark ─── */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #0b0f14;
+  --surface: #121922;
+  --surface-2: #1a232e;
+  --border: #26303c;
+  --border-strong: #384453;
+  --fg: #e6edf3;
+  --muted: #9aa7b4;
+  --faint: #6b7683;
+  --accent: #0d9488;
+  --accent-fg: #ffffff;
+  --accent-text: #2dd4bf;
+  --accent-soft: rgba(45, 212, 191, 0.12);
+  --success: #3ecf8e;
+  --success-soft: rgba(62, 207, 142, 0.13);
+  --warning: #e0b341;
+  --warning-soft: rgba(224, 179, 65, 0.13);
+  --danger: #e0897d;
+  --danger-soft: rgba(224, 137, 125, 0.13);
+  --info: #6ea8fe;
+  --info-soft: rgba(110, 168, 254, 0.13);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --ledger: transparent;
+}
+
+/* ─── Paper (warm bahi-khata ledger) ─── */
+[data-theme="paper"] {
+  color-scheme: light;
+  --canvas: #f3ecda;
+  --surface: #fbf7ec;
+  --surface-2: #efe7d3;
+  --border: #e2d7bf;
+  --border-strong: #cdbf9f;
+  --fg: #2a2620;
+  --muted: #6d6454;
+  --faint: #9c917a;
+  --accent: #0f766e;
+  --accent-fg: #ffffff;
+  --accent-text: #0b5c55;
+  --accent-soft: #e4efe8;
+  --success: #2f7d54;
+  --success-soft: #e6efdf;
+  --warning: #8a6a1a;
+  --warning-soft: #f3e9d0;
+  --danger: #a9463c;
+  --danger-soft: #f1e3da;
+  --info: #2f5fa8;
+  --info-soft: #e5ecf6;
+  --shadow: 0 1px 2px rgba(80, 66, 40, 0.1), 0 2px 6px rgba(80, 66, 40, 0.08);
+  --ledger: rgba(120, 100, 60, 0.1);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--canvas);
+  color: var(--fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Tabular figures for money/numbers */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Signature: faint ledger rules, only in the Paper theme, on .ledger surfaces */
+[data-theme="paper"] .ledger {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 39px,
+    var(--ledger) 39px,
+    var(--ledger) 40px
+  );
+}
+
+/* Motion primitives (transform/opacity only) */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-rise {
+  animation: rise 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
