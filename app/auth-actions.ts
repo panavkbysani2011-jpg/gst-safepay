@@ -54,6 +54,22 @@ export async function signup(formData: FormData) {
   redirect("/dashboard");
 }
 
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const origin = await requestOrigin();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback?next=/dashboard` },
+  });
+
+  if (error || !data.url) {
+    redirect(loginUrl({ error: error?.message ?? "Could not start Google sign-in." }));
+  }
+
+  // Hand off to Google's consent screen; it returns to /auth/callback with a code.
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

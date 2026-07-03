@@ -17,6 +17,13 @@ export async function GET(request: Request) {
   const forwardedProto = request.headers.get("x-forwarded-proto") ?? "https";
   const base = forwardedHost ? `${forwardedProto}://${forwardedHost}` : url.origin;
 
+  // OAuth / recovery providers return errors as query params (e.g. provider not enabled).
+  const providerError = url.searchParams.get("error_description") ?? url.searchParams.get("error");
+  if (providerError) {
+    const q = new URLSearchParams({ error: providerError });
+    return NextResponse.redirect(`${base}/login?${q.toString()}`);
+  }
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

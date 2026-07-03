@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AuthButtons } from "@/app/_components/AuthButtons";
+import { GoogleSignInButton } from "@/app/_components/GoogleSignInButton";
 import { ThemeToggle } from "@/app/_components/ThemeToggle";
+import { signInWithGoogle } from "@/app/auth-actions";
 
 export default async function LoginPage({
   searchParams,
@@ -34,6 +36,16 @@ export default async function LoginPage({
           Log in, or create an account, to track your GST payment deadlines and
           money at risk.
         </p>
+      </div>
+
+      <form action={signInWithGoogle} className="animate-rise">
+        <GoogleSignInButton />
+      </form>
+
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs text-faint">or continue with email</span>
+        <span className="h-px flex-1 bg-border" />
       </div>
 
       <form className="animate-rise flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
