@@ -196,3 +196,31 @@ export function parseRcmCsv(csv: string): ParseResult<RcmPurchaseInput> {
     })
   );
 }
+
+const ComplianceDeadlineSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  authority: z.string().min(1),
+  period: z.string().min(1),
+  dueDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD"),
+  filedDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD").nullable(),
+  proofRef: z.string().nullable(),
+});
+
+export type ComplianceDeadlineInput = z.infer<typeof ComplianceDeadlineSchema>;
+
+export function parseComplianceCsv(
+  csv: string
+): ParseResult<ComplianceDeadlineInput> {
+  return parseRows(csv, (raw) =>
+    ComplianceDeadlineSchema.parse({
+      id: (raw.id ?? "").trim(),
+      name: (raw.name ?? "").trim(),
+      authority: (raw.authority ?? "").trim(),
+      period: (raw.period ?? "").trim(),
+      dueDate: (raw.dueDate ?? "").trim(),
+      filedDate: emptyToNull(raw.filedDate),
+      proofRef: emptyToNull(raw.proofRef),
+    })
+  );
+}

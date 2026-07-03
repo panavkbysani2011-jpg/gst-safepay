@@ -1,0 +1,4 @@
+id,name,authority,period,dueDate,filedDate,proofRef
+cmp-1,GSTR-3B,GST,2026-06,2026-07-20,,
+cmp-2,TDS payment (challan),TDS,2026-06,2026-07-07,,
+cmp-3,GSTR-3B,GST,2026-05,2026-06-20,2026-06-18,ARN-AA290626012345X

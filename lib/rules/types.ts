@@ -283,3 +283,50 @@ export interface VendorVerificationSummary {
   /** recheck-due + never-verified + invalid — i.e. everything not currently "verified". */
   needsAttentionCount: number;
 }
+
+// ---------------------------------------------------------------------------
+// Module 5 — compliance calendar + evidence records
+//
+// A living list of statutory deadlines (GST/TDS/PF/ROC/POSH/…) with, per filed
+// obligation, a proof-of-filing reference (the "evidence vault", metadata form —
+// binary file upload is a later add). Flags what is overdue, due soon, or filed
+// without stored proof.
+// ---------------------------------------------------------------------------
+
+export interface ComplianceDeadline {
+  id: string;
+  name: string; // e.g. "GSTR-3B"
+  authority: string; // e.g. "GST", "TDS", "PF/ESI", "MCA/ROC", "POSH"
+  period: string; // e.g. "2026-06" or "FY2025-26"
+  dueDate: string; // ISO
+  filedDate: string | null; // ISO once filed
+  proofRef: string | null; // ARN / challan no. / note / URL — the evidence
+}
+
+export interface ComplianceRuleConfig {
+  dueSoonWindowDays: number;
+}
+
+export const DEFAULT_COMPLIANCE_CONFIG: ComplianceRuleConfig = {
+  dueSoonWindowDays: 7,
+};
+
+export type ComplianceStatus = "filed" | "overdue" | "due-soon" | "upcoming";
+
+export interface ComplianceAssessment {
+  deadlineId: string;
+  status: ComplianceStatus;
+  daysToDue: number;
+  /** Filed AND a proof reference is stored. */
+  hasEvidence: boolean;
+}
+
+export interface ComplianceSummary {
+  total: number;
+  overdueCount: number;
+  dueSoonCount: number;
+  upcomingCount: number;
+  filedCount: number;
+  /** Filed but with no proof reference stored — an audit gap. */
+  evidenceGapCount: number;
+}

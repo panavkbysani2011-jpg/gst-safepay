@@ -5,6 +5,7 @@ import { RiskActionList } from "./_components/RiskActionList";
 import { ImsClosePanel } from "./_components/ImsClosePanel";
 import { RcmWatchPanel } from "./_components/RcmWatchPanel";
 import { VendorVerificationPanel } from "./_components/VendorVerificationPanel";
+import { CompliancePanel } from "./_components/CompliancePanel";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
@@ -85,6 +86,13 @@ export default async function Home() {
 
       {data.totalRcmPurchases > 0 && (
         <RcmWatchPanel rows={data.rcmRows} asOf={data.rcmAsOf} />
+      )}
+
+      {data.totalCompliance > 0 && (
+        <CompliancePanel
+          deadlines={data.complianceDeadlines}
+          asOf={data.complianceAsOf}
+        />
       )}
 
       <DataControls />

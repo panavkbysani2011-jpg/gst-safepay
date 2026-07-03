@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import {
   parseBillsCsv,
+  parseComplianceCsv,
   parseImsCsv,
   parseRcmCsv,
   parseVendorsCsv,
@@ -12,6 +13,7 @@ import {
 import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
 import { DEMO_IMS_ROWS } from "@/lib/rules/imsFixtures";
 import { DEMO_RCM_ROWS } from "@/lib/rules/rcmFixtures";
+import { DEMO_COMPLIANCE } from "@/lib/rules/complianceFixtures";
 
 export interface UploadResult {
   ok: boolean;
@@ -195,6 +197,41 @@ export async function uploadRcmCsv(
   };
 }
 
+export async function uploadComplianceCsv(
+  _prev: UploadResult | null,
+  formData: FormData
+): Promise<UploadResult> {
+  const user = await requireUser();
+  const text = await readUploadedFile(formData);
+  if (text === null) return EMPTY_FILE_RESULT;
+
+  const { valid, errors } = parseComplianceCsv(text);
+  for (const d of valid) {
+    await db.complianceDeadline.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: d.id } },
+      create: { ...d, ownerId: user.id },
+      update: {
+        name: d.name,
+        authority: d.authority,
+        period: d.period,
+        dueDate: d.dueDate,
+        filedDate: d.filedDate,
+        proofRef: d.proofRef,
+      },
+    });
+  }
+
+  revalidatePath("/");
+  return {
+    ok: errors.length === 0,
+    message: `Imported ${valid.length} compliance deadline(s)${
+      errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
+    }.`,
+    inserted: valid.length,
+    errors,
+  };
+}
+
 export async function seedDemoData(): Promise<void> {
   const user = await requireUser();
   for (const v of DEMO_VENDORS) {
@@ -257,6 +294,20 @@ export async function seedDemoData(): Promise<void> {
       },
     });
   }
+  for (const c of DEMO_COMPLIANCE) {
+    await db.complianceDeadline.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: c.id } },
+      create: { ...c, ownerId: user.id },
+      update: {
+        name: c.name,
+        authority: c.authority,
+        period: c.period,
+        dueDate: c.dueDate,
+        filedDate: c.filedDate,
+        proofRef: c.proofRef,
+      },
+    });
+  }
   revalidatePath("/");
 }
 
@@ -266,5 +317,6 @@ export async function clearData(): Promise<void> {
   await db.vendor.deleteMany({ where: { ownerId: user.id } });
   await db.imsInvoice.deleteMany({ where: { ownerId: user.id } });
   await db.rcmPurchase.deleteMany({ where: { ownerId: user.id } });
+  await db.complianceDeadline.deleteMany({ where: { ownerId: user.id } });
   revalidatePath("/");
 }

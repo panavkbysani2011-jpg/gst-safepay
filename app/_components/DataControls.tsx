@@ -6,6 +6,7 @@ import {
   clearData,
   seedDemoData,
   uploadBillsCsv,
+  uploadComplianceCsv,
   uploadImsCsv,
   uploadRcmCsv,
   uploadVendorsCsv,
@@ -137,6 +138,11 @@ export function DataControls() {
           action={uploadRcmCsv}
           label="4. Upload RCM purchases"
           columns="id, vendorId, vendorName, supplierUnregistered, supplyType, supplyDate, rcmTaxAmount, selfInvoiceIssued, rcmTaxPaidDate"
+        />
+        <UploadForm
+          action={uploadComplianceCsv}
+          label="5. Upload compliance deadlines"
+          columns="id, name, authority, period, dueDate, filedDate, proofRef"
         />
       </div>
     </section>

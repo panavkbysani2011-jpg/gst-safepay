@@ -10,6 +10,7 @@ import {
   type PaymentRiskAssessment,
   type RcmSupplyType,
   type UdyamCategory,
+  type ComplianceDeadline,
   type Vendor,
   type VendorVerificationAssessment,
   type VendorVerificationSummary,
@@ -21,6 +22,7 @@ import {
 import { DEMO_IMS_ASOF, type DemoImsRow } from "@/lib/rules/imsFixtures";
 import { DEMO_RCM_ASOF, type DemoRcmRow } from "@/lib/rules/rcmFixtures";
 import { DEMO_VERIFY_ASOF } from "@/lib/rules/fixtures";
+import { DEMO_COMPLIANCE_ASOF } from "@/lib/rules/complianceFixtures";
 
 export interface VendorVerificationRow {
   vendorName: string;
@@ -52,6 +54,9 @@ export interface DashboardData {
   vendorVerifications: VendorVerificationRow[];
   vendorVerificationSummary: VendorVerificationSummary;
   verifyAsOf: string;
+  complianceDeadlines: ComplianceDeadline[];
+  complianceAsOf: string;
+  totalCompliance: number;
 }
 
 function todayIso(): string {
@@ -60,11 +65,16 @@ function todayIso(): string {
 
 /** Reads vendors + bills from the DB and runs the deterministic rule engine over them. */
 export async function getDashboardData(ownerId: string): Promise<DashboardData> {
-  const [vendorRows, billRows, imsRowsDb, rcmRowsDb] = await Promise.all([
+  const [vendorRows, billRows, imsRowsDb, rcmRowsDb, complianceRowsDb] =
+    await Promise.all([
     db.vendor.findMany({ where: { ownerId } }),
     db.bill.findMany({ where: { ownerId } }),
     db.imsInvoice.findMany({ where: { ownerId }, orderBy: { createdAt: "asc" } }),
     db.rcmPurchase.findMany({ where: { ownerId }, orderBy: { createdAt: "asc" } }),
+    db.complianceDeadline.findMany({
+      where: { ownerId },
+      orderBy: { dueDate: "asc" },
+    }),
   ]);
 
   const vendorsById = new Map(vendorRows.map((v) => [v.id, v]));
@@ -166,6 +176,16 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     DEFAULT_VENDOR_VERIFICATION_CONFIG
   );
 
+  const complianceDeadlines: ComplianceDeadline[] = complianceRowsDb.map((r) => ({
+    id: r.id,
+    name: r.name,
+    authority: r.authority,
+    period: r.period,
+    dueDate: r.dueDate,
+    filedDate: r.filedDate,
+    proofRef: r.proofRef,
+  }));
+
   return {
     asOf,
     ranked,
@@ -182,5 +202,8 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     vendorVerifications,
     vendorVerificationSummary,
     verifyAsOf: DEMO_VERIFY_ASOF,
+    complianceDeadlines,
+    complianceAsOf: DEMO_COMPLIANCE_ASOF,
+    totalCompliance: complianceRowsDb.length,
   };
 }

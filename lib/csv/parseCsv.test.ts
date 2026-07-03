@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   parseBillsCsv,
+  parseComplianceCsv,
   parseImsCsv,
   parseRcmCsv,
   parseVendorsCsv,
@@ -235,6 +236,33 @@ describe("parseRcmCsv", () => {
   it("reports a row error for a malformed supplyDate", () => {
     const csv = [header, "r1,v1,A,yes,goods,01-05-2026,45000,no,"].join("\n");
     const result = parseRcmCsv(csv);
+    expect(result.errors).toHaveLength(1);
+  });
+});
+
+describe("parseComplianceCsv", () => {
+  const header = "id,name,authority,period,dueDate,filedDate,proofRef";
+
+  it("parses valid deadlines incl. nullable filedDate/proofRef", () => {
+    const csv = [
+      header,
+      "c1,GSTR-3B,GST,2026-06,2026-07-20,,",
+      "c2,GSTR-3B,GST,2026-05,2026-06-20,2026-06-18,ARN-123",
+    ].join("\n");
+
+    const result = parseComplianceCsv(csv);
+
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(2);
+    expect(result.valid[0].filedDate).toBeNull();
+    expect(result.valid[0].proofRef).toBeNull();
+    expect(result.valid[1].filedDate).toBe("2026-06-18");
+    expect(result.valid[1].proofRef).toBe("ARN-123");
+  });
+
+  it("reports a row error for a malformed dueDate", () => {
+    const csv = [header, "c1,GSTR-3B,GST,2026-06,20-07-2026,,"].join("\n");
+    const result = parseComplianceCsv(csv);
     expect(result.errors).toHaveLength(1);
   });
 });

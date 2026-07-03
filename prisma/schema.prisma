@@ -82,3 +82,18 @@ model RcmPurchase {
 
   @@id([ownerId, id])
 }
+
+// Module 5 — statutory compliance deadlines + evidence (proof-of-filing metadata).
+model ComplianceDeadline {
+  ownerId   String
+  id        String
+  name      String // e.g. "GSTR-3B"
+  authority String // e.g. "GST" | "TDS" | "PF/ESI" | "MCA/ROC" | "POSH"
+  period    String // e.g. "2026-06" or "FY2025-26"
+  dueDate   String // ISO
+  filedDate String? // ISO once filed, else null
+  proofRef  String? // ARN / challan no. / URL — the evidence
+  createdAt DateTime @default(now())
+
+  @@id([ownerId, id])
+}
