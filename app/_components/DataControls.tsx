@@ -6,6 +6,8 @@ import {
   clearData,
   seedDemoData,
   uploadBillsCsv,
+  uploadImsCsv,
+  uploadRcmCsv,
   uploadVendorsCsv,
   type UploadResult,
 } from "../actions";
@@ -125,6 +127,16 @@ export function DataControls() {
           action={uploadBillsCsv}
           label="2. Upload bills"
           columns="id, vendorId, invoiceAcceptanceDate, amount, hasWrittenAgreement, agreedPaymentDays, paidDate"
+        />
+        <UploadForm
+          action={uploadImsCsv}
+          label="3. Upload IMS invoices"
+          columns="id, vendorId, vendorName, invoiceNo, taxPeriod, taxableValue, gstAmount, imsAction, eligibility"
+        />
+        <UploadForm
+          action={uploadRcmCsv}
+          label="4. Upload RCM purchases"
+          columns="id, vendorId, vendorName, supplierUnregistered, supplyType, supplyDate, rcmTaxAmount, selfInvoiceIssued, rcmTaxPaidDate"
         />
       </div>
     </section>

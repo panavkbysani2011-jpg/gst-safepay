@@ -1,0 +1,4 @@
+id,vendorId,vendorName,supplierUnregistered,supplyType,supplyDate,rcmTaxAmount,selfInvoiceIssued,rcmTaxPaidDate
+rcm-1,v-transport,Roadside Transport,true,goods,2026-05-01,45000,false,
+rcm-2,v-legal,Legal Advisory LLP,false,services,2026-06-25,90000,false,
+rcm-3,v-cotton,Village Cotton Supplier,true,goods,2026-04-01,60000,true,2026-07-01

@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { parseBillsCsv, parseVendorsCsv } from "@/lib/csv/parseCsv";
+import {
+  parseBillsCsv,
+  parseImsCsv,
+  parseRcmCsv,
+  parseVendorsCsv,
+} from "@/lib/csv/parseCsv";
 import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
 import { DEMO_IMS_ROWS } from "@/lib/rules/imsFixtures";
 import { DEMO_RCM_ROWS } from "@/lib/rules/rcmFixtures";
@@ -113,6 +118,80 @@ export async function uploadBillsCsv(
     }.`,
     inserted,
     errors: allErrors,
+  };
+}
+
+export async function uploadImsCsv(
+  _prev: UploadResult | null,
+  formData: FormData
+): Promise<UploadResult> {
+  const user = await requireUser();
+  const text = await readUploadedFile(formData);
+  if (text === null) return EMPTY_FILE_RESULT;
+
+  const { valid, errors } = parseImsCsv(text);
+  for (const inv of valid) {
+    await db.imsInvoice.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: inv.id } },
+      create: { ...inv, ownerId: user.id },
+      update: {
+        vendorId: inv.vendorId,
+        vendorName: inv.vendorName,
+        invoiceNo: inv.invoiceNo,
+        taxPeriod: inv.taxPeriod,
+        taxableValue: inv.taxableValue,
+        gstAmount: inv.gstAmount,
+        imsAction: inv.imsAction,
+        eligibility: inv.eligibility,
+      },
+    });
+  }
+
+  revalidatePath("/");
+  return {
+    ok: errors.length === 0,
+    message: `Imported ${valid.length} IMS invoice(s)${
+      errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
+    }.`,
+    inserted: valid.length,
+    errors,
+  };
+}
+
+export async function uploadRcmCsv(
+  _prev: UploadResult | null,
+  formData: FormData
+): Promise<UploadResult> {
+  const user = await requireUser();
+  const text = await readUploadedFile(formData);
+  if (text === null) return EMPTY_FILE_RESULT;
+
+  const { valid, errors } = parseRcmCsv(text);
+  for (const p of valid) {
+    await db.rcmPurchase.upsert({
+      where: { ownerId_id: { ownerId: user.id, id: p.id } },
+      create: { ...p, ownerId: user.id },
+      update: {
+        vendorId: p.vendorId,
+        vendorName: p.vendorName,
+        supplierUnregistered: p.supplierUnregistered,
+        supplyType: p.supplyType,
+        supplyDate: p.supplyDate,
+        rcmTaxAmount: p.rcmTaxAmount,
+        selfInvoiceIssued: p.selfInvoiceIssued,
+        rcmTaxPaidDate: p.rcmTaxPaidDate,
+      },
+    });
+  }
+
+  revalidatePath("/");
+  return {
+    ok: errors.length === 0,
+    message: `Imported ${valid.length} RCM purchase(s)${
+      errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
+    }.`,
+    inserted: valid.length,
+    errors,
   };
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { parseBillsCsv, parseVendorsCsv } from "./parseCsv";
+import {
+  parseBillsCsv,
+  parseImsCsv,
+  parseRcmCsv,
+  parseVendorsCsv,
+} from "./parseCsv";
 
 describe("parseVendorsCsv", () => {
   it("parses valid vendor rows", () => {
@@ -124,5 +129,112 @@ describe("parseBillsCsv", () => {
     const result = parseBillsCsv("");
     expect(result.valid).toEqual([]);
     expect(result.errors).toEqual([]);
+  });
+});
+
+describe("parseImsCsv", () => {
+  const header =
+    "id,vendorId,vendorName,invoiceNo,taxPeriod,taxableValue,gstAmount,imsAction,eligibility";
+
+  it("parses valid IMS invoice rows", () => {
+    const csv = [
+      header,
+      "i1,v1,Bharath Steel,INV-1,2026-06,500000,90000,none,unsure",
+      "i2,v2,Apex Supplies,INV-2,2026-05,100000,18000,accept,eligible",
+    ].join("\n");
+
+    const result = parseImsCsv(csv);
+
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(2);
+    expect(result.valid[0]).toEqual({
+      id: "i1",
+      vendorId: "v1",
+      vendorName: "Bharath Steel",
+      invoiceNo: "INV-1",
+      taxPeriod: "2026-06",
+      taxableValue: 500000,
+      gstAmount: 90000,
+      imsAction: "none",
+      eligibility: "unsure",
+    });
+  });
+
+  it("reports a row error for an invalid taxPeriod, keeping valid rows", () => {
+    const csv = [
+      header,
+      "i1,v1,A,INV-1,2026-06,500000,90000,none,unsure",
+      "i2,v2,B,INV-2,June-2026,100000,18000,accept,eligible",
+    ].join("\n");
+
+    const result = parseImsCsv(csv);
+    expect(result.valid).toHaveLength(1);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].row).toBe(3);
+  });
+
+  it("reports a row error for an unknown imsAction", () => {
+    const csv = [header, "i1,v1,A,INV-1,2026-06,500000,90000,maybe,unsure"].join(
+      "\n"
+    );
+    const result = parseImsCsv(csv);
+    expect(result.valid).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+  });
+
+  it("reports a row error for a non-numeric gstAmount", () => {
+    const csv = [header, "i1,v1,A,INV-1,2026-06,500000,lots,none,unsure"].join(
+      "\n"
+    );
+    const result = parseImsCsv(csv);
+    expect(result.errors).toHaveLength(1);
+  });
+});
+
+describe("parseRcmCsv", () => {
+  const header =
+    "id,vendorId,vendorName,supplierUnregistered,supplyType,supplyDate,rcmTaxAmount,selfInvoiceIssued,rcmTaxPaidDate";
+
+  it("parses valid RCM rows with boolean coercion and nullable paid date", () => {
+    const csv = [
+      header,
+      "r1,v1,Roadside Transport,yes,goods,2026-05-01,45000,no,",
+      "r2,v2,Legal LLP,0,services,2026-06-25,90000,1,2026-07-01",
+    ].join("\n");
+
+    const result = parseRcmCsv(csv);
+
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(2);
+    expect(result.valid[0]).toEqual({
+      id: "r1",
+      vendorId: "v1",
+      vendorName: "Roadside Transport",
+      supplierUnregistered: true,
+      supplyType: "goods",
+      supplyDate: "2026-05-01",
+      rcmTaxAmount: 45000,
+      selfInvoiceIssued: false,
+      rcmTaxPaidDate: null,
+    });
+    expect(result.valid[1].supplierUnregistered).toBe(false);
+    expect(result.valid[1].selfInvoiceIssued).toBe(true);
+    expect(result.valid[1].rcmTaxPaidDate).toBe("2026-07-01");
+  });
+
+  it("reports a row error for an unknown supplyType", () => {
+    const csv = [
+      header,
+      "r1,v1,A,yes,widgets,2026-05-01,45000,no,",
+    ].join("\n");
+    const result = parseRcmCsv(csv);
+    expect(result.valid).toHaveLength(0);
+    expect(result.errors).toHaveLength(1);
+  });
+
+  it("reports a row error for a malformed supplyDate", () => {
+    const csv = [header, "r1,v1,A,yes,goods,01-05-2026,45000,no,"].join("\n");
+    const result = parseRcmCsv(csv);
+    expect(result.errors).toHaveLength(1);
   });
 });

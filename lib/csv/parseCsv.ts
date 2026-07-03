@@ -30,6 +30,15 @@ function emptyToNull(value: unknown): string | null {
   return s === "" ? null : s;
 }
 
+function requireNumber(value: unknown, field: string): number {
+  const s = String(value ?? "").trim();
+  const n = Number(s);
+  if (s === "" || Number.isNaN(n)) {
+    throw new Error(`invalid ${field} "${value ?? ""}"`);
+  }
+  return n;
+}
+
 function messageFrom(error: unknown): string {
   if (error instanceof z.ZodError) {
     return error.issues
@@ -124,4 +133,66 @@ export function parseBillsCsv(csv: string): ParseResult<BillInput> {
       paidDate: emptyToNull(raw.paidDate),
     });
   });
+}
+
+const TAX_PERIOD = /^\d{4}-\d{2}$/;
+
+const ImsInvoiceSchema = z.object({
+  id: z.string().min(1),
+  vendorId: z.string().min(1),
+  vendorName: z.string().min(1),
+  invoiceNo: z.string().min(1),
+  taxPeriod: z.string().regex(TAX_PERIOD, "expected YYYY-MM"),
+  taxableValue: z.number().finite().nonnegative(),
+  gstAmount: z.number().finite().nonnegative(),
+  imsAction: z.enum(["accept", "reject", "pending", "none"]),
+  eligibility: z.enum(["eligible", "ineligible", "unsure"]),
+});
+
+export type ImsInvoiceInput = z.infer<typeof ImsInvoiceSchema>;
+
+export function parseImsCsv(csv: string): ParseResult<ImsInvoiceInput> {
+  return parseRows(csv, (raw) =>
+    ImsInvoiceSchema.parse({
+      id: (raw.id ?? "").trim(),
+      vendorId: (raw.vendorId ?? "").trim(),
+      vendorName: (raw.vendorName ?? "").trim(),
+      invoiceNo: (raw.invoiceNo ?? "").trim(),
+      taxPeriod: (raw.taxPeriod ?? "").trim(),
+      taxableValue: requireNumber(raw.taxableValue, "taxableValue"),
+      gstAmount: requireNumber(raw.gstAmount, "gstAmount"),
+      imsAction: (raw.imsAction ?? "").trim(),
+      eligibility: (raw.eligibility ?? "").trim(),
+    })
+  );
+}
+
+const RcmPurchaseSchema = z.object({
+  id: z.string().min(1),
+  vendorId: z.string().min(1),
+  vendorName: z.string().min(1),
+  supplierUnregistered: z.boolean(),
+  supplyType: z.enum(["goods", "services"]),
+  supplyDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD"),
+  rcmTaxAmount: z.number().finite().nonnegative(),
+  selfInvoiceIssued: z.boolean(),
+  rcmTaxPaidDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD").nullable(),
+});
+
+export type RcmPurchaseInput = z.infer<typeof RcmPurchaseSchema>;
+
+export function parseRcmCsv(csv: string): ParseResult<RcmPurchaseInput> {
+  return parseRows(csv, (raw) =>
+    RcmPurchaseSchema.parse({
+      id: (raw.id ?? "").trim(),
+      vendorId: (raw.vendorId ?? "").trim(),
+      vendorName: (raw.vendorName ?? "").trim(),
+      supplierUnregistered: coerceBoolean(raw.supplierUnregistered, false),
+      supplyType: (raw.supplyType ?? "").trim(),
+      supplyDate: (raw.supplyDate ?? "").trim(),
+      rcmTaxAmount: requireNumber(raw.rcmTaxAmount, "rcmTaxAmount"),
+      selfInvoiceIssued: coerceBoolean(raw.selfInvoiceIssued, false),
+      rcmTaxPaidDate: emptyToNull(raw.rcmTaxPaidDate),
+    })
+  );
 }
