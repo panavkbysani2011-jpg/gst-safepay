@@ -32,17 +32,29 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginRoute = request.nextUrl.pathname === "/login";
+  const { pathname } = request.nextUrl;
+  // Public marketing + legal surface — reachable without logging in.
+  const PUBLIC_PATHS = new Set([
+    "/",
+    "/login",
+    "/privacy",
+    "/terms",
+    "/disclaimer",
+    "/security",
+    "/refund",
+  ]);
+  const isPublic = PUBLIC_PATHS.has(pathname);
 
-  if (!user && !isLoginRoute) {
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isLoginRoute) {
+  // Logged-in users skip the landing/login and land in the app.
+  if (user && (pathname === "/login" || pathname === "/")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

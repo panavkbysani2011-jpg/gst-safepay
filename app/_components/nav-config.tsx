@@ -18,7 +18,7 @@ export type IconName =
 
 // Primary cockpit navigation (order = the user's mental flow).
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Overview", icon: "overview" },
+  { href: "/dashboard", label: "Overview", icon: "overview" },
   { href: "/payments", label: "Payments", icon: "payments" },
   { href: "/ims", label: "GST IMS", icon: "ims" },
   { href: "/rcm", label: "Reverse charge", icon: "rcm" },
@@ -34,7 +34,7 @@ export const IMPORT_ITEM: NavItem = {
 
 // Topbar title + one-line context, keyed by the first path segment.
 export const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: "Overview", subtitle: "Your money-safety cockpit" },
+  "/dashboard": { title: "Overview", subtitle: "Your money-safety cockpit" },
   "/payments": {
     title: "Payments",
     subtitle: "MSME 45-day payment safety · who to pay first",
@@ -60,13 +60,11 @@ export const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
 };
 
 export function routeMetaFor(pathname: string): { title: string; subtitle: string } {
-  if (pathname === "/") return ROUTE_META["/"];
   const seg = "/" + (pathname.split("/")[1] ?? "");
   return ROUTE_META[seg] ?? { title: "GST SafePay", subtitle: "" };
 }
 
 export function isNavActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
