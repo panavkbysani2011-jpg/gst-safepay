@@ -37,6 +37,9 @@ export async function proxy(request: NextRequest) {
   const PUBLIC_PATHS = new Set([
     "/",
     "/login",
+    "/forgot-password",
+    "/reset-password",
+    "/auth/callback",
     "/privacy",
     "/terms",
     "/disclaimer",

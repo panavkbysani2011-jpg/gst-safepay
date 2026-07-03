@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AuthButtons } from "@/app/_components/AuthButtons";
 import { ThemeToggle } from "@/app/_components/ThemeToggle";
 
@@ -59,6 +60,13 @@ export default async function LoginPage({
             className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </label>
+
+        <Link
+          href="/forgot-password"
+          className="-mt-1.5 self-end text-xs font-medium text-accent-text transition-opacity hover:opacity-80"
+        >
+          Forgot password?
+        </Link>
 
         {error && (
           <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
