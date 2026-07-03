@@ -7,46 +7,54 @@ import type { Bill, Vendor } from "./types";
 
 export const TODAY = "2026-07-02";
 
+/** Fixed as-of date for the synthetic Module 4 verification demo (keeps the status spread stable). */
+export const DEMO_VERIFY_ASOF = "2026-07-15";
+
 export const DEMO_VENDORS: Vendor[] = [
   {
     id: "v-steelworks",
     name: "Bharath Steelworks (Micro)",
-    gstin: "29AACCB1234F1Z5",
+    gstin: "29AACCB1234F1Z3",
     gstinActive: true,
     udyamRegistered: true,
     udyamCategory: "micro",
+    lastVerifiedDate: "2026-06-10",
   },
   {
     id: "v-packaging",
     name: "Sundar Packaging Co (Small)",
-    gstin: "29AAECS5678G1Z2",
+    gstin: "29AAECS5678G1ZU",
     gstinActive: true,
     udyamRegistered: true,
     udyamCategory: "small",
+    lastVerifiedDate: "2025-11-01",
   },
   {
     id: "v-logistics",
     name: "Metro Logistics (Small, no agreement on file)",
-    gstin: "29AADCM4321H1Z9",
+    gstin: "29AADCM4321H1ZL",
     gstinActive: true,
     udyamRegistered: true,
     udyamCategory: "small",
+    lastVerifiedDate: null,
   },
   {
     id: "v-enterprise",
     name: "Apex Industrial Supplies (Medium)",
-    gstin: "29AAFCA9988J1Z3",
+    gstin: "29AAFCA9988J1ZR",
     gstinActive: true,
     udyamRegistered: true,
     udyamCategory: "medium",
+    lastVerifiedDate: "2026-05-20",
   },
   {
     id: "v-nonmsme",
     name: "Global Traders LLP (not Udyam-registered)",
-    gstin: "29AAGCT5566K1Z1",
+    gstin: "29AAGCT5566K1ZX",
     gstinActive: true,
     udyamRegistered: false,
     udyamCategory: null,
+    lastVerifiedDate: "2026-07-01",
   },
 ];
 

@@ -24,6 +24,7 @@ model Vendor {
   gstinActive     Boolean  @default(true)
   udyamRegistered Boolean  @default(false)
   udyamCategory   String? // "micro" | "small" | "medium" | null
+  lastVerifiedDate String? // ISO date the GSTIN/Udyam was last confirmed (Module 4), or null
   bills           Bill[]
   createdAt       DateTime @default(now())
 

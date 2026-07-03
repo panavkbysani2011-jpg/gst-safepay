@@ -7,6 +7,8 @@ export interface Vendor {
   gstinActive: boolean;
   udyamRegistered: boolean;
   udyamCategory: UdyamCategory | null;
+  /** ISO date the vendor's GSTIN/Udyam status was last confirmed, or null/undefined if never. Drives Module 4 re-verification. */
+  lastVerifiedDate?: string | null;
 }
 
 export interface Bill {
@@ -238,4 +240,46 @@ export interface RcmSummary {
   totalRcmCashDue: number;
   totalInterestExposure: number;
   totalPenaltyExposure: number;
+}
+
+// ---------------------------------------------------------------------------
+// Module 4 — living vendor GSTIN/Udyam verifier
+//
+// A wrong/lapsed vendor GSTIN silently breaks input-tax-credit and mis-drives
+// the MSME payment clock. This module validates the GSTIN offline (format +
+// mod-36 checksum) and flags vendors not re-checked within the cadence.
+// (Live portal lookup can slot in later behind the same interface.)
+// ---------------------------------------------------------------------------
+
+export type VendorVerificationStatus =
+  | "verified" // valid GSTIN, checked within the cadence
+  | "recheck-due" // valid GSTIN, but overdue for a re-check
+  | "never-verified" // valid format, never confirmed
+  | "invalid-gstin"; // fails format/checksum — fix before relying on it
+
+export interface VendorVerificationAssessment {
+  vendorId: string;
+  gstinValid: boolean;
+  status: VendorVerificationStatus;
+  lastVerifiedDate: string | null;
+  daysSinceVerified: number | null;
+}
+
+export interface VendorVerificationConfig {
+  /** Re-verify a vendor's GSTIN/Udyam status at least this often (days). VERIFY the cadence with a CA. */
+  recheckCadenceDays: number;
+}
+
+export const DEFAULT_VENDOR_VERIFICATION_CONFIG: VendorVerificationConfig = {
+  recheckCadenceDays: 180,
+};
+
+export interface VendorVerificationSummary {
+  total: number;
+  verifiedCount: number;
+  recheckDueCount: number;
+  neverVerifiedCount: number;
+  invalidCount: number;
+  /** recheck-due + never-verified + invalid — i.e. everything not currently "verified". */
+  needsAttentionCount: number;
 }

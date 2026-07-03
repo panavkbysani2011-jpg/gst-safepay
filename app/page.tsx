@@ -4,6 +4,7 @@ import { MoneyAtRiskHero } from "./_components/MoneyAtRiskHero";
 import { RiskActionList } from "./_components/RiskActionList";
 import { ImsClosePanel } from "./_components/ImsClosePanel";
 import { RcmWatchPanel } from "./_components/RcmWatchPanel";
+import { VendorVerificationPanel } from "./_components/VendorVerificationPanel";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { requireUser } from "@/lib/auth";
 import { signOut } from "./auth-actions";
@@ -68,6 +69,14 @@ export default async function Home() {
             <RiskActionList risks={data.ranked} />
           </section>
         </>
+      )}
+
+      {data.totalVendors > 0 && (
+        <VendorVerificationPanel
+          rows={data.vendorVerifications}
+          summary={data.vendorVerificationSummary}
+          asOf={data.verifyAsOf}
+        />
       )}
 
       {data.totalImsInvoices > 0 && (

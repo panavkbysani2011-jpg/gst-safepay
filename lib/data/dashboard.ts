@@ -3,6 +3,7 @@ import { assessPaymentRisk } from "@/lib/rules/paymentDeadline";
 import { rankBillsByRisk } from "@/lib/rules/prioritize";
 import {
   DEFAULT_PAYMENT_RULE_CONFIG,
+  DEFAULT_VENDOR_VERIFICATION_CONFIG,
   type Bill,
   type ImsAction,
   type ImsEligibility,
@@ -10,9 +11,22 @@ import {
   type RcmSupplyType,
   type UdyamCategory,
   type Vendor,
+  type VendorVerificationAssessment,
+  type VendorVerificationSummary,
 } from "@/lib/rules/types";
+import {
+  assessVendorVerification,
+  summarizeVendorVerification,
+} from "@/lib/rules/vendorVerification";
 import { DEMO_IMS_ASOF, type DemoImsRow } from "@/lib/rules/imsFixtures";
 import { DEMO_RCM_ASOF, type DemoRcmRow } from "@/lib/rules/rcmFixtures";
+import { DEMO_VERIFY_ASOF } from "@/lib/rules/fixtures";
+
+export interface VendorVerificationRow {
+  vendorName: string;
+  gstin: string;
+  assessment: VendorVerificationAssessment;
+}
 
 export type RankedRisk = PaymentRiskAssessment & {
   vendorName: string;
@@ -35,6 +49,9 @@ export interface DashboardData {
   rcmRows: DemoRcmRow[];
   rcmAsOf: string;
   totalRcmPurchases: number;
+  vendorVerifications: VendorVerificationRow[];
+  vendorVerificationSummary: VendorVerificationSummary;
+  verifyAsOf: string;
 }
 
 function todayIso(): string {
@@ -123,6 +140,32 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     (r) => r.status === "due-soon"
   ).length;
 
+  const vendorsForVerify: Vendor[] = vendorRows.map((v) => ({
+    id: v.id,
+    name: v.name,
+    gstin: v.gstin,
+    gstinActive: v.gstinActive,
+    udyamRegistered: v.udyamRegistered,
+    udyamCategory: (v.udyamCategory as UdyamCategory | null) ?? null,
+    lastVerifiedDate: v.lastVerifiedDate,
+  }));
+  const vendorVerifications: VendorVerificationRow[] = vendorsForVerify.map(
+    (v) => ({
+      vendorName: v.name,
+      gstin: v.gstin,
+      assessment: assessVendorVerification(
+        v,
+        DEMO_VERIFY_ASOF,
+        DEFAULT_VENDOR_VERIFICATION_CONFIG
+      ),
+    })
+  );
+  const vendorVerificationSummary = summarizeVendorVerification(
+    vendorsForVerify,
+    DEMO_VERIFY_ASOF,
+    DEFAULT_VENDOR_VERIFICATION_CONFIG
+  );
+
   return {
     asOf,
     ranked,
@@ -136,5 +179,8 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     rcmRows,
     rcmAsOf: DEMO_RCM_ASOF,
     totalRcmPurchases: rcmRowsDb.length,
+    vendorVerifications,
+    vendorVerificationSummary,
+    verifyAsOf: DEMO_VERIFY_ASOF,
   };
 }

@@ -207,6 +207,7 @@ export async function seedDemoData(): Promise<void> {
         gstinActive: v.gstinActive,
         udyamRegistered: v.udyamRegistered,
         udyamCategory: v.udyamCategory,
+        lastVerifiedDate: v.lastVerifiedDate ?? null,
       },
     });
   }
