@@ -58,7 +58,7 @@ export async function uploadVendorsCsv(
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
     message: `Imported ${valid.length} vendor(s)${
@@ -112,7 +112,7 @@ export async function uploadBillsCsv(
     inserted += 1;
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return {
     ok: allErrors.length === 0,
     message: `Imported ${inserted} bill(s)${
@@ -149,7 +149,7 @@ export async function uploadImsCsv(
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
     message: `Imported ${valid.length} IMS invoice(s)${
@@ -186,7 +186,7 @@ export async function uploadRcmCsv(
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
     message: `Imported ${valid.length} RCM purchase(s)${
@@ -221,7 +221,7 @@ export async function uploadComplianceCsv(
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
     message: `Imported ${valid.length} compliance deadline(s)${
@@ -308,7 +308,7 @@ export async function seedDemoData(): Promise<void> {
       },
     });
   }
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function clearData(): Promise<void> {
@@ -318,5 +318,5 @@ export async function clearData(): Promise<void> {
   await db.imsInvoice.deleteMany({ where: { ownerId: user.id } });
   await db.rcmPurchase.deleteMany({ where: { ownerId: user.id } });
   await db.complianceDeadline.deleteMany({ where: { ownerId: user.id } });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
