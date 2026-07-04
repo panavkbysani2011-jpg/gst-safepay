@@ -20,7 +20,20 @@ import {
   parseRcmCsv,
   parseVendorsCsv,
   type ParseResult,
+  type VendorInput,
+  type BillInput,
+  type ImsInvoiceInput,
+  type RcmPurchaseInput,
+  type ComplianceDeadlineInput,
 } from "@/lib/csv/parseCsv";
+import {
+  checkBillsHealth,
+  checkComplianceHealth,
+  checkImsHealth,
+  checkRcmHealth,
+  checkVendorsHealth,
+  type HealthWarning,
+} from "@/lib/csv/dataHealth";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -147,11 +160,13 @@ function formatCell(value: unknown): string {
 // Preview of exactly what will be written, shown BEFORE anything touches the DB.
 function PreviewPanel({
   preview,
+  warnings,
   fileName,
   onConfirm,
   onCancel,
 }: {
   preview: ParseResult<unknown>;
+  warnings: HealthWarning[];
   fileName: string | null;
   onConfirm: () => void;
   onCancel: () => void;
@@ -230,6 +245,23 @@ function PreviewPanel({
         </div>
       )}
 
+      {warnings.length > 0 && (
+        <div className="rounded-lg bg-info-soft px-3 py-2 text-[12px] text-info">
+          <p className="font-medium">
+            {warnings.length} row{warnings.length === 1 ? "" : "s"} will import,
+            but worth a double-check:
+          </p>
+          <ul className="mt-1 list-inside list-disc text-[11.5px]">
+            {warnings.slice(0, 5).map((w, i) => (
+              <li key={i}>
+                <span className="font-medium">{w.label}</span>: {w.message}
+              </li>
+            ))}
+            {warnings.length > 5 && <li>…and {warnings.length - 5} more</li>}
+          </ul>
+        </div>
+      )}
+
       {rows.length === 0 ? (
         <p className="text-[12.5px] text-danger">
           Nothing to import — fix the errors above and choose the file again.
@@ -298,6 +330,23 @@ function ResultPanel({
     </div>
   );
 }
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Advisory data-health checks, keyed by the card's parser identity — deterministic,
+// runs client-side on the already-parsed rows, nothing leaves the browser.
+const HEALTH_BY_PARSER = new Map<
+  CsvParser,
+  (rows: unknown[], asOf: string) => HealthWarning[]
+>([
+  [parseVendorsCsv, (r) => checkVendorsHealth(r as VendorInput[])],
+  [parseBillsCsv, (r, a) => checkBillsHealth(r as BillInput[], a)],
+  [parseImsCsv, (r) => checkImsHealth(r as ImsInvoiceInput[])],
+  [parseRcmCsv, (r, a) => checkRcmHealth(r as RcmPurchaseInput[], a)],
+  [parseComplianceCsv, (r, a) => checkComplianceHealth(r as ComplianceDeadlineInput[], a)],
+]);
 
 function UploadCard({ card }: { card: CardConfig }) {
   const [result, formAction, isPending] = useActionState(card.action, null);
@@ -384,6 +433,7 @@ function UploadCard({ card }: { card: CardConfig }) {
       ) : preview ? (
         <PreviewPanel
           preview={preview}
+          warnings={HEALTH_BY_PARSER.get(card.parse)?.(preview.valid, todayIso()) ?? []}
           fileName={fileName}
           onConfirm={() => setSubmittedName(fileName)}
           onCancel={reset}
