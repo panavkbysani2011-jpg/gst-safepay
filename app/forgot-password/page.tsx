@@ -6,9 +6,9 @@ import { requestPasswordReset } from "@/app/auth-actions";
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string }>;
+  searchParams: Promise<{ sent?: string; error?: string }>;
 }) {
-  const { sent } = await searchParams;
+  const { sent, error } = await searchParams;
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-sm flex-col justify-center gap-7 px-6 py-16">
@@ -71,6 +71,9 @@ export default async function ForgotPasswordPage({
                 className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               />
             </label>
+            {error && (
+              <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+            )}
             <FormSubmit pendingLabel="Sending…">Send reset link</FormSubmit>
           </form>
 

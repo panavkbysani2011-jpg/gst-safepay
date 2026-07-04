@@ -83,6 +83,15 @@ model RcmPurchase {
   @@id([ownerId, id])
 }
 
+// Fixed-window rate-limit counters (Phase 4). Not tenant data — keyed by
+// "action:ip" or "action:userId". Durable + shared across serverless instances,
+// which in-memory limiting can't do on Vercel. Locked down in prisma/rls.sql.
+model RateLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+}
+
 // Module 5 — statutory compliance deadlines + evidence (proof-of-filing metadata).
 model ComplianceDeadline {
   ownerId   String

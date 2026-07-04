@@ -67,3 +67,10 @@ create policy "owner_all" on public."ComplianceDeadline"
   with check ((select auth.uid())::text = "ownerId");
 revoke all on public."ComplianceDeadline" from anon;
 revoke truncate on public."ComplianceDeadline" from authenticated;
+
+-- ── RateLimit ────────────────────────────────────────────────────────────
+-- Not tenant data (no ownerId) — accessed only by the app via Prisma (postgres,
+-- BYPASSRLS). No API role should touch it: RLS on + full revoke, no policy.
+alter table public."RateLimit" enable row level security;
+revoke all on public."RateLimit" from anon;
+revoke all on public."RateLimit" from authenticated;

@@ -44,7 +44,13 @@ export default async function RootLayout({
       className={`${sora.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
       <head>
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {/* suppressHydrationWarning: React strips the nonce client-side, so the
+            server nonce vs client-empty diff on this script is expected + benign. */}
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
       </head>
       <body className="min-h-full bg-canvas font-sans text-fg">{children}</body>
     </html>
