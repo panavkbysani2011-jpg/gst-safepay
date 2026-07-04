@@ -19,10 +19,8 @@ import {
   assessVendorVerification,
   summarizeVendorVerification,
 } from "@/lib/rules/vendorVerification";
-import { DEMO_IMS_ASOF, type DemoImsRow } from "@/lib/rules/imsFixtures";
-import { DEMO_RCM_ASOF, type DemoRcmRow } from "@/lib/rules/rcmFixtures";
-import { DEMO_VERIFY_ASOF } from "@/lib/rules/fixtures";
-import { DEMO_COMPLIANCE_ASOF } from "@/lib/rules/complianceFixtures";
+import type { DemoImsRow } from "@/lib/rules/imsFixtures";
+import type { DemoRcmRow } from "@/lib/rules/rcmFixtures";
 
 export interface VendorVerificationRow {
   vendorName: string;
@@ -165,14 +163,14 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
       gstin: v.gstin,
       assessment: assessVendorVerification(
         v,
-        DEMO_VERIFY_ASOF,
+        asOf,
         DEFAULT_VENDOR_VERIFICATION_CONFIG
       ),
     })
   );
   const vendorVerificationSummary = summarizeVendorVerification(
     vendorsForVerify,
-    DEMO_VERIFY_ASOF,
+    asOf,
     DEFAULT_VENDOR_VERIFICATION_CONFIG
   );
 
@@ -194,16 +192,16 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     totalBills: billRows.length,
     totalVendors: vendorRows.length,
     imsRows,
-    imsAsOf: DEMO_IMS_ASOF,
+    imsAsOf: asOf,
     totalImsInvoices: imsRowsDb.length,
     rcmRows,
-    rcmAsOf: DEMO_RCM_ASOF,
+    rcmAsOf: asOf,
     totalRcmPurchases: rcmRowsDb.length,
     vendorVerifications,
     vendorVerificationSummary,
-    verifyAsOf: DEMO_VERIFY_ASOF,
+    verifyAsOf: asOf,
     complianceDeadlines,
-    complianceAsOf: DEMO_COMPLIANCE_ASOF,
+    complianceAsOf: asOf,
     totalCompliance: complianceRowsDb.length,
   };
 }

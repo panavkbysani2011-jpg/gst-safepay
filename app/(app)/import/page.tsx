@@ -1,5 +1,5 @@
-import { DataControls } from "@/app/_components/DataControls";
+import { ImportPortal } from "@/app/_components/ImportPortal";
 
 export default function ImportPage() {
-  return <DataControls />;
+  return <ImportPortal />;
 }

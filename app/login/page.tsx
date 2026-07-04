@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { AuthButtons } from "@/app/_components/AuthButtons";
+import { GoogleSignInButton } from "@/app/_components/GoogleSignInButton";
 import { ThemeToggle } from "@/app/_components/ThemeToggle";
+import { signInWithGoogle } from "@/app/auth-actions";
 
 export default async function LoginPage({
   searchParams,
@@ -35,6 +38,16 @@ export default async function LoginPage({
         </p>
       </div>
 
+      <form action={signInWithGoogle} className="animate-rise">
+        <GoogleSignInButton />
+      </form>
+
+      <div className="flex items-center gap-3">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-xs text-faint">or continue with email</span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
       <form className="animate-rise flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
           Email
@@ -59,6 +72,13 @@ export default async function LoginPage({
             className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           />
         </label>
+
+        <Link
+          href="/forgot-password"
+          className="-mt-1.5 self-end text-xs font-medium text-accent-text transition-opacity hover:opacity-80"
+        >
+          Forgot password?
+        </Link>
 
         {error && (
           <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
