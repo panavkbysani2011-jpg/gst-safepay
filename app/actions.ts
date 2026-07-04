@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { rateLimit, retryPhrase } from "@/lib/rate-limit";
 import {
   parseBillsCsv,
   parseComplianceCsv,
@@ -35,11 +36,26 @@ async function readUploadedFile(formData: FormData): Promise<string | null> {
   return file.text();
 }
 
+// Per-user upload throttle — uploads write to the DB, so cap abuse/DoS while
+// staying generous for real use. Returns a result to short-circuit with, or null.
+async function uploadRateLimited(userId: string): Promise<UploadResult | null> {
+  const limited = await rateLimit(`upload:${userId}`, 30, 600);
+  if (limited.ok) return null;
+  return {
+    ok: false,
+    message: `Too many uploads — try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
+    inserted: 0,
+    errors: [],
+  };
+}
+
 export async function uploadVendorsCsv(
   _prev: UploadResult | null,
   formData: FormData
 ): Promise<UploadResult> {
   const user = await requireUser();
+  const limited = await uploadRateLimited(user.id);
+  if (limited) return limited;
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
@@ -74,6 +90,8 @@ export async function uploadBillsCsv(
   formData: FormData
 ): Promise<UploadResult> {
   const user = await requireUser();
+  const limited = await uploadRateLimited(user.id);
+  if (limited) return limited;
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
@@ -128,6 +146,8 @@ export async function uploadImsCsv(
   formData: FormData
 ): Promise<UploadResult> {
   const user = await requireUser();
+  const limited = await uploadRateLimited(user.id);
+  if (limited) return limited;
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
@@ -165,6 +185,8 @@ export async function uploadRcmCsv(
   formData: FormData
 ): Promise<UploadResult> {
   const user = await requireUser();
+  const limited = await uploadRateLimited(user.id);
+  if (limited) return limited;
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
@@ -202,6 +224,8 @@ export async function uploadComplianceCsv(
   formData: FormData
 ): Promise<UploadResult> {
   const user = await requireUser();
+  const limited = await uploadRateLimited(user.id);
+  if (limited) return limited;
   const text = await readUploadedFile(formData);
   if (text === null) return EMPTY_FILE_RESULT;
 
