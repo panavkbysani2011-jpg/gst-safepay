@@ -26,7 +26,7 @@ export function SiteFooter() {
             <p className="mt-3 text-[13px] leading-relaxed text-muted">
               A money-safety cockpit for Indian GST-registered businesses. Catches
               MSME 45-day, GST IMS, reverse-charge and GSTIN risks before they cost
-              you — with every figure traceable to a rule.
+              you, with every figure traceable to a rule.
             </p>
           </div>
 
@@ -46,7 +46,7 @@ export function SiteFooter() {
 
         <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-[12px] text-faint sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Prototype on synthetic data — not tax advice. Tax-rule parameters must be
+            Prototype on synthetic data, not tax advice. Tax-rule parameters must be
             verified by a chartered accountant before real use.
           </p>
           <p>© 2026 GST SafePay · Made in India</p>
