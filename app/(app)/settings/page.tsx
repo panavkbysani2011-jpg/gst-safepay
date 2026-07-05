@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { getRuleConfig } from "@/lib/data/ruleConfig";
+import { isDefaultRuleConfig } from "@/lib/rules/ruleConfig";
+import { RuleConfigEditor } from "@/app/_components/RuleConfigEditor";
 import { DeleteAccountButton } from "@/app/_components/DeleteAccountButton";
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const config = await getRuleConfig(user.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       {/* Account */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
         <h2 className="font-display text-[15px] font-semibold text-fg">Account</h2>
@@ -17,6 +21,19 @@ export default async function SettingsPage() {
         <p className="mt-3 text-[12.5px] text-faint">
           Switch the colour theme any time from the toggle in the top bar.
         </p>
+      </section>
+
+      {/* Rule configuration — CA-editable tax parameters that drive every engine */}
+      <section className="flex flex-col gap-4">
+        <div>
+          <h2 className="font-display text-[15px] font-semibold text-fg">Rule configuration</h2>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
+            The tax parameters behind every calculation. Ship-defaults reflect current
+            law; your chartered accountant can correct any value for your firm and it
+            flows straight into the money math — auditable, deterministic, no code change.
+          </p>
+        </div>
+        <RuleConfigEditor config={config} isCustomised={!isDefaultRuleConfig(config)} />
       </section>
 
       {/* Your data — export */}

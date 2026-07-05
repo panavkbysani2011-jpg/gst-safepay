@@ -27,7 +27,7 @@ export default async function PaymentsPage() {
         moneyAlreadyAtRisk={data.moneyAlreadyAtRisk}
         billsNeedingActionThisWeek={data.billsNeedingActionThisWeek}
       />
-      <PaymentsTable risks={data.ranked} />
+      <PaymentsTable risks={data.ranked} config={data.ruleConfig.payment} />
     </div>
   );
 }

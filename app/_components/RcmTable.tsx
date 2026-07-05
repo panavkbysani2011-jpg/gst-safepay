@@ -8,7 +8,7 @@ import type {
   RcmSummary,
   RcmSupplyType,
 } from "@/lib/rules/types";
-import { DEFAULT_RCM_RULE_CONFIG as CFG } from "@/lib/rules/types";
+import type { RcmCfg } from "@/lib/rules/ruleConfig";
 import { DetailDrawer } from "./DetailDrawer";
 import { TONE_BADGE, type Tone } from "./tone";
 
@@ -64,7 +64,7 @@ function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
 
 type Step = { n: string; label: string; basis: string; value: string; add?: boolean };
 
-function buildSteps(r: RcmRowView): Step[] {
+function buildSteps(r: RcmRowView, config: RcmCfg): Step[] {
   const steps: Step[] = [
     {
       n: "1",
@@ -75,13 +75,13 @@ function buildSteps(r: RcmRowView): Step[] {
     {
       n: "2",
       label: "Time of supply",
-      basis: `${r.supplyType === "goods" ? CFG.timeOfSupplyDaysGoods : CFG.timeOfSupplyDaysServices}-day rule (${r.supplyType})`,
+      basis: `${r.supplyType === "goods" ? config.timeOfSupplyDaysGoods : config.timeOfSupplyDaysServices}-day rule (${r.supplyType})`,
       value: formatDate(r.timeOfSupply),
     },
     {
       n: "3",
       label: "RCM tax payable in cash by",
-      basis: `GSTR-3B due (day ${CFG.gstr3bDueDayOfNextMonth} of the next month) — RCM tax is cash, no ITC set-off`,
+      basis: `GSTR-3B due (day ${config.gstr3bDueDayOfNextMonth} of the next month) — RCM tax is cash, no ITC set-off`,
       value: formatDate(r.rcmPaymentDueDate),
     },
   ];
@@ -89,7 +89,7 @@ function buildSteps(r: RcmRowView): Step[] {
     steps.push({
       n: "4",
       label: "Self-invoice deadline",
-      basis: `Rule 47A: self-invoice within ${CFG.selfInvoiceDays} days (unregistered supplier)`,
+      basis: `Rule 47A: self-invoice within ${config.selfInvoiceDays} days (unregistered supplier)`,
       value: formatDate(r.selfInvoiceDeadline),
     });
   }
@@ -97,7 +97,7 @@ function buildSteps(r: RcmRowView): Step[] {
     steps.push({
       n: "+",
       label: "s.50 interest on late RCM tax",
-      basis: `${CFG.latePaymentInterestRatePercent}% p.a. from the due date to payment`,
+      basis: `${config.latePaymentInterestRatePercent}% p.a. from the due date to payment`,
       value: formatINR(r.projectedInterestCost),
       add: true,
     });
@@ -106,7 +106,7 @@ function buildSteps(r: RcmRowView): Step[] {
     steps.push({
       n: "+",
       label: "Self-invoice default penalty",
-      basis: `${formatINR(CFG.lateSelfInvoicePenalty)} exposure under s.122`,
+      basis: `${formatINR(config.lateSelfInvoicePenalty)} exposure under s.122`,
       value: formatINR(r.penaltyExposure),
       add: true,
     });
@@ -114,7 +114,7 @@ function buildSteps(r: RcmRowView): Step[] {
   return steps;
 }
 
-export function RcmTable({ rows, summary }: { rows: RcmRowView[]; summary: RcmSummary }) {
+export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summary: RcmSummary; config: RcmCfg }) {
   const [selected, setSelected] = useState<RcmRowView | null>(null);
   const exposure = summary.totalInterestExposure + summary.totalPenaltyExposure;
 
@@ -252,7 +252,7 @@ export function RcmTable({ rows, summary }: { rows: RcmRowView[]; summary: RcmSu
                 How this is assessed
               </p>
               <div>
-                {buildSteps(selected).map((s, i) => (
+                {buildSteps(selected, config).map((s, i) => (
                   <div key={i} className="flex gap-3 border-b border-border py-2.5 last:border-b-0">
                     <span
                       className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-semibold ${

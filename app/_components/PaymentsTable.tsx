@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatINR, formatDate, subtractDaysIso } from "@/lib/format";
-import { DEFAULT_PAYMENT_RULE_CONFIG as CFG } from "@/lib/rules/types";
+import type { PaymentCfg } from "@/lib/rules/ruleConfig";
 import type { RankedRisk } from "@/lib/data/dashboard";
 import { StatusBadge } from "./StatusBadge";
 import { DetailDrawer } from "./DetailDrawer";
@@ -14,17 +14,17 @@ function daysLabel(daysRemaining: number | null): string {
   return `${daysRemaining} days left`;
 }
 
-function deadlineBasis(deadlineDays: number | null): string {
-  if (deadlineDays === CFG.statutoryMaxDaysWithoutAgreement)
+function deadlineBasis(deadlineDays: number | null, config: PaymentCfg): string {
+  if (deadlineDays === config.statutoryMaxDaysWithoutAgreement)
     return `No written agreement → statutory ${deadlineDays}-day limit (MSMED Act s.15)`;
-  if (deadlineDays === CFG.statutoryMaxDaysWithAgreement)
+  if (deadlineDays === config.statutoryMaxDaysWithAgreement)
     return `${deadlineDays}-day statutory cap for MSME suppliers (MSMED Act s.15)`;
   return `Agreed ${deadlineDays}-day payment term`;
 }
 
 type Step = { n: string; label: string; basis: string; value?: string; add?: boolean };
 
-function buildSteps(r: RankedRisk): Step[] {
+function buildSteps(r: RankedRisk, config: PaymentCfg): Step[] {
   const steps: Step[] = [];
   if (r.dueDate && r.deadlineDays !== null) {
     steps.push({
@@ -36,7 +36,7 @@ function buildSteps(r: RankedRisk): Step[] {
     steps.push({
       n: "2",
       label: "MSME payment deadline",
-      basis: deadlineBasis(r.deadlineDays),
+      basis: deadlineBasis(r.deadlineDays, config),
       value: formatDate(r.dueDate),
     });
   }
@@ -50,7 +50,7 @@ function buildSteps(r: RankedRisk): Step[] {
     steps.push({
       n: "+",
       label: "Lost income-tax deduction",
-      basis: `§43B(h): the expense is disallowed until paid, taxed at ${CFG.assumedMarginalTaxRatePercent}%`,
+      basis: `§43B(h): the expense is disallowed until paid, taxed at ${config.assumedMarginalTaxRatePercent}%`,
       value: formatINR(r.taxDeductionAtRisk),
       add: true,
     });
@@ -59,7 +59,7 @@ function buildSteps(r: RankedRisk): Step[] {
     steps.push({
       n: "+",
       label: "MSMED penalty interest",
-      basis: `${CFG.msmedInterestMultiplier}× RBI bank rate (${CFG.rbiBankRatePercent}%), compounded monthly (MSMED Act s.16)`,
+      basis: `${config.msmedInterestMultiplier}× RBI bank rate (${config.rbiBankRatePercent}%), compounded monthly (MSMED Act s.16)`,
       value: formatINR(r.projectedInterestCost),
       add: true,
     });
@@ -67,7 +67,7 @@ function buildSteps(r: RankedRisk): Step[] {
   return steps;
 }
 
-export function PaymentsTable({ risks }: { risks: RankedRisk[] }) {
+export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: PaymentCfg }) {
   const [selected, setSelected] = useState<RankedRisk | null>(null);
   const [compact, setCompact] = useState(false);
 
@@ -197,7 +197,7 @@ export function PaymentsTable({ risks }: { risks: RankedRisk[] }) {
                 How this is computed
               </p>
               <div>
-                {buildSteps(selected).map((s, i) => (
+                {buildSteps(selected, config).map((s, i) => (
                   <div
                     key={i}
                     className="flex gap-3 border-b border-border py-2.5 last:border-b-0"

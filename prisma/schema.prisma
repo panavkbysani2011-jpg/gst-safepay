@@ -106,3 +106,11 @@ model ComplianceDeadline {
 
   @@id([ownerId, id])
 }
+
+// CA-config editor — per-owner overrides of the tax-rule parameters, stored as a
+// validated JSON blob and resolved against the shipped defaults on read.
+model RuleConfig {
+  ownerId   String   @id
+  values    Json
+  updatedAt DateTime @updatedAt
+}

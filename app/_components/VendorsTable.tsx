@@ -5,7 +5,7 @@ import type {
   VendorVerificationStatus,
   VendorVerificationSummary,
 } from "@/lib/rules/types";
-import { DEFAULT_VENDOR_VERIFICATION_CONFIG as CFG } from "@/lib/rules/types";
+import type { VendorCfg } from "@/lib/rules/ruleConfig";
 import { DetailDrawer } from "./DetailDrawer";
 import { TONE_BADGE, type Tone } from "./tone";
 
@@ -54,9 +54,11 @@ function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
 export function VendorsTable({
   rows,
   summary,
+  config,
 }: {
   rows: VendorRowView[];
   summary: VendorVerificationSummary;
+  config: VendorCfg;
 }) {
   const [selected, setSelected] = useState<VendorRowView | null>(null);
 
@@ -184,7 +186,7 @@ export function VendorsTable({
                   {
                     n: "3",
                     label: "Re-check cadence",
-                    basis: `Re-verify at least every ${CFG.recheckCadenceDays} days`,
+                    basis: `Re-verify at least every ${config.recheckCadenceDays} days`,
                     value:
                       selected.daysSinceVerified === null
                         ? "—"

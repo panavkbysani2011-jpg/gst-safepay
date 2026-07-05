@@ -30,5 +30,11 @@ export default async function VendorsPage() {
     daysSinceVerified: v.assessment.daysSinceVerified,
   }));
 
-  return <VendorsTable rows={rows} summary={data.vendorVerificationSummary} />;
+  return (
+    <VendorsTable
+      rows={rows}
+      summary={data.vendorVerificationSummary}
+      config={data.ruleConfig.vendor}
+    />
+  );
 }
