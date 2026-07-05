@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { buildOverview } from "@/lib/data/overview";
+import { getGettingStartedState, GETTING_STARTED_DISMISS_COOKIE } from "@/lib/onboarding";
+import { GettingStarted } from "@/app/_components/GettingStarted";
 import { OverviewBoard } from "@/app/_components/OverviewBoard";
 import { EmptyState, SectionHeading } from "@/app/_components/ui";
 
@@ -10,7 +13,25 @@ export default async function OverviewPage() {
   const data = await getDashboardData(user.id);
   const overview = buildOverview(data);
 
+  const gettingStarted = getGettingStartedState({
+    vendors: data.totalVendors,
+    bills: data.totalBills,
+    gstRecords: data.totalImsInvoices + data.totalRcmPurchases + data.totalCompliance,
+  });
+  const dismissed =
+    (await cookies()).get(GETTING_STARTED_DISMISS_COOKIE)?.value === "1";
+  const showGettingStarted = !gettingStarted.allDone && !dismissed;
+
   if (!overview.hasAnyData) {
+    // Cold account: the checklist is the primary content. If it was dismissed
+    // with no data yet, fall back to the minimal empty state.
+    if (showGettingStarted) {
+      return (
+        <div className="flex flex-col gap-8">
+          <GettingStarted state={gettingStarted} />
+        </div>
+      );
+    }
     return (
       <EmptyState
         title="No data yet"
@@ -33,6 +54,7 @@ export default async function OverviewPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      {showGettingStarted && <GettingStarted state={gettingStarted} />}
       <OverviewBoard model={overview} />
 
       <section className="flex flex-col gap-3">
