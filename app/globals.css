@@ -162,3 +162,22 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Print: strip the app shell so a report prints as a clean handout ─── */
+@media print {
+  aside,
+  header,
+  footer,
+  [data-no-print] {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

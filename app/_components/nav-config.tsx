@@ -13,6 +13,7 @@ export type IconName =
   | "rcm"
   | "vendors"
   | "compliance"
+  | "report"
   | "import"
   | "settings";
 
@@ -24,6 +25,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/rcm", label: "Reverse charge", icon: "rcm" },
   { href: "/vendors", label: "Vendors", icon: "vendors" },
   { href: "/compliance", label: "Compliance", icon: "compliance" },
+  { href: "/report", label: "Action report", icon: "report" },
 ];
 
 export const IMPORT_ITEM: NavItem = {
@@ -51,6 +53,10 @@ export const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
   "/compliance": {
     title: "Compliance",
     subtitle: "Filing deadlines & evidence vault",
+  },
+  "/report": {
+    title: "Action report",
+    subtitle: "A printable summary for you or your CA",
   },
   "/import": {
     title: "Import data",
@@ -95,6 +101,12 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <rect x="4" y="5" width="16" height="16" rx="2" />
       <path d="M4 9h16M8 3v4M16 3v4" />
+    </>
+  ),
+  report: (
+    <>
+      <path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+      <path d="M14 3v5h5M9 13h6M9 17h4" />
     </>
   ),
   import: (
