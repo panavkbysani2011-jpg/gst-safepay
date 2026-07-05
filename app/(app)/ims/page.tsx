@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { assessImsInvoice, summarizeImsClose } from "@/lib/rules/imsClose";
-import { DEFAULT_IMS_RULE_CONFIG } from "@/lib/rules/types";
 import { ImsTable, type ImsRowView } from "@/app/_components/ImsTable";
 import { EmptyState } from "@/app/_components/ui";
 
@@ -23,7 +22,7 @@ export default async function ImsPage() {
   }
 
   const rows: ImsRowView[] = data.imsRows.map(({ invoice, vendorName }) => {
-    const a = assessImsInvoice(invoice, data.imsAsOf, DEFAULT_IMS_RULE_CONFIG);
+    const a = assessImsInvoice(invoice, data.imsAsOf, data.ruleConfig.ims);
     return {
       invoiceId: invoice.id,
       vendorName,
@@ -43,7 +42,7 @@ export default async function ImsPage() {
   const summary = summarizeImsClose(
     data.imsRows.map((r) => r.invoice),
     data.imsAsOf,
-    DEFAULT_IMS_RULE_CONFIG
+    data.ruleConfig.ims
   );
 
   return <ImsTable rows={rows} summary={summary} />;
