@@ -13,7 +13,7 @@ export default async function SettingsPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       {/* Account */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
-        <h2 className="font-display text-[15px] font-semibold text-fg">Account</h2>
+        <h2 className="font-display text-lg font-semibold text-fg">Account</h2>
         <dl className="mt-4 flex items-center justify-between border-t border-border pt-4">
           <dt className="text-[13px] text-muted">Signed in as</dt>
           <dd className="text-[13.5px] font-medium text-fg">{user.email ?? "—"}</dd>
@@ -26,7 +26,7 @@ export default async function SettingsPage() {
       {/* Rule configuration — CA-editable tax parameters that drive every engine */}
       <section className="flex flex-col gap-4">
         <div>
-          <h2 className="font-display text-[15px] font-semibold text-fg">Rule configuration</h2>
+          <h2 className="font-display text-lg font-semibold text-fg">Rule configuration</h2>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
             The tax parameters behind every calculation. Ship-defaults reflect current
             law; your chartered accountant can correct any value for your firm and it
@@ -38,7 +38,7 @@ export default async function SettingsPage() {
 
       {/* Your data — export */}
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
-        <h2 className="font-display text-[15px] font-semibold text-fg">Your data</h2>
+        <h2 className="font-display text-lg font-semibold text-fg">Your data</h2>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
           Download everything we hold for your account — vendors, bills, GST IMS
           invoices, reverse-charge purchases and compliance filings — as a single
@@ -65,7 +65,7 @@ export default async function SettingsPage() {
 
       {/* Danger zone — delete account */}
       <section className="rounded-2xl border border-danger/30 bg-danger-soft p-6">
-        <h2 className="font-display text-[15px] font-semibold text-danger">Delete account</h2>
+        <h2 className="font-display text-lg font-semibold text-danger">Delete account</h2>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
           Permanently delete your account and every record tied to it. This is
           immediate and cannot be undone — export your data first if you might need it.

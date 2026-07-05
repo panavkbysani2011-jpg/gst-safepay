@@ -16,6 +16,7 @@ export async function deleteAccount() {
   await db.imsInvoice.deleteMany({ where: { ownerId: user.id } });
   await db.rcmPurchase.deleteMany({ where: { ownerId: user.id } });
   await db.complianceDeadline.deleteMany({ where: { ownerId: user.id } });
+  await db.ruleConfig.deleteMany({ where: { ownerId: user.id } });
 
   // 2. Delete the auth account itself. Prisma connects as postgres, and every FK
   //    referencing auth.users is ON DELETE CASCADE, so sessions/identities/tokens
