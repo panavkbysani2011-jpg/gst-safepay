@@ -1,7 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { assessRcmPurchase, summarizeRcm } from "@/lib/rules/rcmWatch";
-import { DEFAULT_RCM_RULE_CONFIG } from "@/lib/rules/types";
 import { RcmTable, type RcmRowView } from "@/app/_components/RcmTable";
 import { EmptyState } from "@/app/_components/ui";
 
@@ -23,7 +22,7 @@ export default async function RcmPage() {
   }
 
   const rows: RcmRowView[] = data.rcmRows.map(({ purchase, vendorName }) => {
-    const a = assessRcmPurchase(purchase, data.rcmAsOf, DEFAULT_RCM_RULE_CONFIG);
+    const a = assessRcmPurchase(purchase, data.rcmAsOf, data.ruleConfig.rcm);
     return {
       purchaseId: purchase.id,
       vendorName,
@@ -46,8 +45,8 @@ export default async function RcmPage() {
   const summary = summarizeRcm(
     data.rcmRows.map((r) => r.purchase),
     data.rcmAsOf,
-    DEFAULT_RCM_RULE_CONFIG
+    data.ruleConfig.rcm
   );
 
-  return <RcmTable rows={rows} summary={summary} />;
+  return <RcmTable rows={rows} summary={summary} config={data.ruleConfig.rcm} />;
 }

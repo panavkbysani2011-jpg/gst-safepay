@@ -2,11 +2,6 @@ import type { DashboardData } from "./dashboard";
 import { assessImsInvoice } from "@/lib/rules/imsClose";
 import { assessRcmPurchase } from "@/lib/rules/rcmWatch";
 import { assessComplianceDeadline } from "@/lib/rules/compliance";
-import {
-  DEFAULT_COMPLIANCE_CONFIG,
-  DEFAULT_IMS_RULE_CONFIG,
-  DEFAULT_RCM_RULE_CONFIG,
-} from "@/lib/rules/types";
 
 // A calm subset of the shared Tone palette — the only tones the overview uses.
 export type OverviewTone = "danger" | "warning" | "info" | "neutral";
@@ -73,7 +68,7 @@ export function buildOverview(data: DashboardData): OverviewModel {
 
   let imsExposure = 0;
   for (const { invoice, vendorName } of data.imsRows) {
-    const a = assessImsInvoice(invoice, data.imsAsOf, DEFAULT_IMS_RULE_CONFIG);
+    const a = assessImsInvoice(invoice, data.imsAsOf, data.ruleConfig.ims);
     imsExposure += a.totalExposure;
     if (a.status === "auto-accepted-missed") {
       items.push({
@@ -102,7 +97,7 @@ export function buildOverview(data: DashboardData): OverviewModel {
 
   let rcmExposure = 0;
   for (const { purchase, vendorName } of data.rcmRows) {
-    const a = assessRcmPurchase(purchase, data.rcmAsOf, DEFAULT_RCM_RULE_CONFIG);
+    const a = assessRcmPurchase(purchase, data.rcmAsOf, data.ruleConfig.rcm);
     rcmExposure += a.totalExposure;
     if (
       a.selfInvoiceStatus === "overdue" ||
@@ -163,7 +158,7 @@ export function buildOverview(data: DashboardData): OverviewModel {
   }
 
   for (const d of data.complianceDeadlines) {
-    const a = assessComplianceDeadline(d, data.complianceAsOf, DEFAULT_COMPLIANCE_CONFIG);
+    const a = assessComplianceDeadline(d, data.complianceAsOf, data.ruleConfig.compliance);
     if (a.status === "overdue") {
       items.push({
         id: `cmp-${d.id}`,

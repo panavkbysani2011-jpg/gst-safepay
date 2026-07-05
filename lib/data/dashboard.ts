@@ -2,8 +2,6 @@ import { db } from "@/lib/db";
 import { assessPaymentRisk } from "@/lib/rules/paymentDeadline";
 import { rankBillsByRisk } from "@/lib/rules/prioritize";
 import {
-  DEFAULT_PAYMENT_RULE_CONFIG,
-  DEFAULT_VENDOR_VERIFICATION_CONFIG,
   type Bill,
   type ImsAction,
   type ImsEligibility,
@@ -21,6 +19,8 @@ import {
 } from "@/lib/rules/vendorVerification";
 import type { DemoImsRow } from "@/lib/rules/imsFixtures";
 import type { DemoRcmRow } from "@/lib/rules/rcmFixtures";
+import { getRuleConfig } from "./ruleConfig";
+import type { RuleConfig } from "@/lib/rules/ruleConfig";
 
 export interface VendorVerificationRow {
   vendorName: string;
@@ -55,6 +55,10 @@ export interface DashboardData {
   complianceDeadlines: ComplianceDeadline[];
   complianceAsOf: string;
   totalCompliance: number;
+  // The owner's resolved rule config (shipped defaults + any CA overrides).
+  // Threaded so pages, the Overview, and client tables all compute with the
+  // same values a CA has confirmed. Equals the defaults until a CA edits them.
+  ruleConfig: RuleConfig;
 }
 
 function todayIso(): string {
@@ -63,8 +67,15 @@ function todayIso(): string {
 
 /** Reads vendors + bills from the DB and runs the deterministic rule engine over them. */
 export async function getDashboardData(ownerId: string): Promise<DashboardData> {
-  const [vendorRows, billRows, imsRowsDb, rcmRowsDb, complianceRowsDb] =
-    await Promise.all([
+  const [
+    ruleConfig,
+    vendorRows,
+    billRows,
+    imsRowsDb,
+    rcmRowsDb,
+    complianceRowsDb,
+  ] = await Promise.all([
+    getRuleConfig(ownerId),
     db.vendor.findMany({ where: { ownerId } }),
     db.bill.findMany({ where: { ownerId } }),
     db.imsInvoice.findMany({ where: { ownerId }, orderBy: { createdAt: "asc" } }),
@@ -129,12 +140,7 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
       paidDate: row.paidDate,
     };
 
-    const assessment = assessPaymentRisk(
-      vendor,
-      bill,
-      asOf,
-      DEFAULT_PAYMENT_RULE_CONFIG
-    );
+    const assessment = assessPaymentRisk(vendor, bill, asOf, ruleConfig.payment);
     risks.push({ ...assessment, vendorName: vendor.name, amount: bill.amount });
   }
 
@@ -161,17 +167,13 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     (v) => ({
       vendorName: v.name,
       gstin: v.gstin,
-      assessment: assessVendorVerification(
-        v,
-        asOf,
-        DEFAULT_VENDOR_VERIFICATION_CONFIG
-      ),
+      assessment: assessVendorVerification(v, asOf, ruleConfig.vendor),
     })
   );
   const vendorVerificationSummary = summarizeVendorVerification(
     vendorsForVerify,
     asOf,
-    DEFAULT_VENDOR_VERIFICATION_CONFIG
+    ruleConfig.vendor
   );
 
   const complianceDeadlines: ComplianceDeadline[] = complianceRowsDb.map((r) => ({
@@ -203,5 +205,6 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     complianceDeadlines,
     complianceAsOf: asOf,
     totalCompliance: complianceRowsDb.length,
+    ruleConfig,
   };
 }

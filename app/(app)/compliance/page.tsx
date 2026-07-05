@@ -4,7 +4,6 @@ import {
   assessComplianceDeadline,
   summarizeCompliance,
 } from "@/lib/rules/compliance";
-import { DEFAULT_COMPLIANCE_CONFIG } from "@/lib/rules/types";
 import {
   ComplianceTable,
   type ComplianceRowView,
@@ -29,7 +28,7 @@ export default async function CompliancePage() {
   }
 
   const rows: ComplianceRowView[] = data.complianceDeadlines.map((d) => {
-    const a = assessComplianceDeadline(d, data.complianceAsOf, DEFAULT_COMPLIANCE_CONFIG);
+    const a = assessComplianceDeadline(d, data.complianceAsOf, data.ruleConfig.compliance);
     return {
       deadlineId: d.id,
       name: d.name,
@@ -46,7 +45,7 @@ export default async function CompliancePage() {
   const summary = summarizeCompliance(
     data.complianceDeadlines,
     data.complianceAsOf,
-    DEFAULT_COMPLIANCE_CONFIG
+    data.ruleConfig.compliance
   );
 
   return <ComplianceTable rows={rows} summary={summary} />;

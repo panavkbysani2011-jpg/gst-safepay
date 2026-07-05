@@ -74,3 +74,14 @@ revoke truncate on public."ComplianceDeadline" from authenticated;
 alter table public."RateLimit" enable row level security;
 revoke all on public."RateLimit" from anon;
 revoke all on public."RateLimit" from authenticated;
+
+-- ── RuleConfig ───────────────────────────────────────────────────────────
+-- Per-owner tax-rule overrides — same owner-only isolation as the tenant tables.
+alter table public."RuleConfig" enable row level security;
+drop policy if exists "owner_all" on public."RuleConfig";
+create policy "owner_all" on public."RuleConfig"
+  for all to authenticated
+  using ((select auth.uid())::text = "ownerId")
+  with check ((select auth.uid())::text = "ownerId");
+revoke all on public."RuleConfig" from anon;
+revoke truncate on public."RuleConfig" from authenticated;
