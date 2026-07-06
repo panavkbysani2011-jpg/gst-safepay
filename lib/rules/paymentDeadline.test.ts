@@ -135,3 +135,85 @@ describe("assessPaymentRisk", () => {
     expect(result.projectedInterestCost).toBeGreaterThan(0);
   });
 });
+
+describe("assessPaymentRisk — boundaries and config overrides", () => {
+  it("treats a bill due exactly today (unpaid) as due-soon with 0 days left, not breached", () => {
+    // accepted 2026-05-18 + 45 days -> due 2026-07-02 == ASOF
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({ invoiceAcceptanceDate: "2026-05-18" }),
+      ASOF,
+      DEFAULT_PAYMENT_RULE_CONFIG
+    );
+    expect(result.dueDate).toBe("2026-07-02");
+    expect(result.daysRemaining).toBe(0);
+    expect(result.status).toBe("due-soon");
+    expect(result.totalCostOfDelay).toBe(0);
+  });
+
+  it("treats a bill one day past the deadline (unpaid) as breached", () => {
+    // accepted 2026-05-17 + 45 days -> due 2026-07-01, one day before ASOF
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({ invoiceAcceptanceDate: "2026-05-17" }),
+      ASOF,
+      DEFAULT_PAYMENT_RULE_CONFIG
+    );
+    expect(result.dueDate).toBe("2026-07-01");
+    expect(result.status).toBe("breached");
+  });
+
+  it("treats a bill paid exactly on the due date as paid-on-time", () => {
+    // accepted 2026-06-15 + 15-day agreed term -> due 2026-06-30, paid same day
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({
+        invoiceAcceptanceDate: "2026-06-15",
+        agreedPaymentDays: 15,
+        paidDate: "2026-06-30",
+      }),
+      ASOF,
+      DEFAULT_PAYMENT_RULE_CONFIG
+    );
+    expect(result.dueDate).toBe("2026-06-30");
+    expect(result.status).toBe("paid-on-time");
+    expect(result.totalCostOfDelay).toBe(0);
+  });
+
+  it("honours an agreed term SHORTER than the statutory cap", () => {
+    // a 20-day agreement is well under the 45-day cap -> 20 days applies
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({ agreedPaymentDays: 20 }),
+      ASOF,
+      DEFAULT_PAYMENT_RULE_CONFIG
+    );
+    expect(result.deadlineDays).toBe(20);
+  });
+
+  it("shifts the deadline when a CA lowers the statutory cap in config", () => {
+    const strict = {
+      ...DEFAULT_PAYMENT_RULE_CONFIG,
+      statutoryMaxDaysWithAgreement: 30,
+    };
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({ agreedPaymentDays: 45 }),
+      ASOF,
+      strict
+    );
+    expect(result.deadlineDays).toBe(30);
+  });
+
+  it("rolls the due date across a year boundary", () => {
+    // accepted 2026-12-20 + 45 days -> due 2027-02-03
+    const result = assessPaymentRisk(
+      vendor(),
+      bill({ invoiceAcceptanceDate: "2026-12-20" }),
+      "2026-12-25",
+      DEFAULT_PAYMENT_RULE_CONFIG
+    );
+    expect(result.dueDate).toBe("2027-02-03");
+    expect(result.status).toBe("safe");
+  });
+});

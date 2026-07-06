@@ -39,4 +39,26 @@ describe("isValidGstin", () => {
   it("rejects an empty string", () => {
     expect(isValidGstin("")).toBe(false);
   });
+
+  it("catches a single adjacent transposition (checksum changes)", () => {
+    // 27AAPFU0939F1ZV is valid; swapping the P and F flips the check digit.
+    expect(isValidGstin("27AAPFU0939F1ZV")).toBe(true);
+    expect(isValidGstin("27AAFPU0939F1ZV")).toBe(false);
+  });
+
+  it("round-trips a computed checksum across several state codes", () => {
+    for (const state of ["01", "07", "27", "29", "36"]) {
+      const first14 = `${state}AAPFU0939F1Z`;
+      const gstin = first14 + computeGstinChecksum(first14);
+      expect(isValidGstin(gstin)).toBe(true);
+    }
+  });
+
+  it("rejects a GSTIN whose 14th character isn't the mandatory 'Z'", () => {
+    expect(isValidGstin("27AAPFU0939F1YV")).toBe(false);
+  });
+
+  it("returns '?' when a non-base36 character can't be scored", () => {
+    expect(computeGstinChecksum("27AAPFU0939F1-")).toBe("?");
+  });
 });

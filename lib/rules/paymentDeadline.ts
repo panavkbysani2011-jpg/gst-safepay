@@ -1,3 +1,4 @@
+import { addDays, daysBetween } from "./dateUtil";
 import type {
   Bill,
   PaymentRiskAssessment,
@@ -6,20 +7,7 @@ import type {
 } from "./types";
 
 const DUE_SOON_WINDOW_DAYS = 7;
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const DAYS_PER_COMPOUNDING_PERIOD = 30;
-
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = new Date(fromIso).getTime();
-  const to = new Date(toIso).getTime();
-  return Math.round((to - from) / MS_PER_DAY);
-}
-
-function addDays(iso: string, days: number): string {
-  const date = new Date(iso);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
 
 function isMsmeCovered(vendor: Vendor): boolean {
   return (

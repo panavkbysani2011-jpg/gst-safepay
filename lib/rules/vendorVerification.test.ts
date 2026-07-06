@@ -81,3 +81,47 @@ describe("summarizeVendorVerification", () => {
     expect(s.needsAttentionCount).toBe(3); // recheck-due + never + invalid
   });
 });
+
+describe("assessVendorVerification — cadence boundary and overrides", () => {
+  // ASOF 2026-07-15; default cadence = 180 days.
+  it("is 'verified' at exactly the cadence and 'recheck-due' one day past it", () => {
+    // 2026-01-16 is exactly 180 days before ASOF
+    const atEdge = assessVendorVerification(
+      vendor({ lastVerifiedDate: "2026-01-16" }),
+      ASOF,
+      DEFAULT_VENDOR_VERIFICATION_CONFIG
+    );
+    expect(atEdge.daysSinceVerified).toBe(180);
+    expect(atEdge.status).toBe("verified");
+
+    const pastEdge = assessVendorVerification(
+      vendor({ lastVerifiedDate: "2026-01-15" }),
+      ASOF,
+      DEFAULT_VENDOR_VERIFICATION_CONFIG
+    );
+    expect(pastEdge.daysSinceVerified).toBe(181);
+    expect(pastEdge.status).toBe("recheck-due");
+  });
+
+  it("respects a CA-configured re-check cadence", () => {
+    const cfg = { recheckCadenceDays: 90 };
+    // 2026-03-17 is 120 days before ASOF -> recheck-due under a 90-day cadence
+    const r = assessVendorVerification(
+      vendor({ lastVerifiedDate: "2026-03-17" }),
+      ASOF,
+      cfg
+    );
+    expect(r.daysSinceVerified).toBe(120);
+    expect(r.status).toBe("recheck-due");
+  });
+
+  it("summarizes an empty vendor list to zeros", () => {
+    const s = summarizeVendorVerification(
+      [],
+      ASOF,
+      DEFAULT_VENDOR_VERIFICATION_CONFIG
+    );
+    expect(s.total).toBe(0);
+    expect(s.needsAttentionCount).toBe(0);
+  });
+});
