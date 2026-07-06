@@ -101,7 +101,8 @@ model ComplianceDeadline {
   period    String // e.g. "2026-06" or "FY2025-26"
   dueDate   String // ISO
   filedDate String? // ISO once filed, else null
-  proofRef  String? // ARN / challan no. / URL — the evidence
+  proofRef  String? // ARN / challan no. / URL — the evidence reference
+  proofFilePath String? // path in the private "compliance-proofs" Storage bucket, or null
   createdAt DateTime @default(now())
 
   @@id([ownerId, id])

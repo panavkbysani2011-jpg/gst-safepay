@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatDate } from "@/lib/format";
 import type { ComplianceStatus, ComplianceSummary } from "@/lib/rules/types";
 import { DetailDrawer } from "./DetailDrawer";
+import { ComplianceProof } from "./ComplianceProof";
 import { TONE_BADGE, type Tone } from "./tone";
 
 export type ComplianceRowView = {
@@ -16,6 +17,7 @@ export type ComplianceRowView = {
   status: ComplianceStatus;
   daysToDue: number;
   hasEvidence: boolean;
+  hasProofFile: boolean;
 };
 
 const STATUS: Record<ComplianceStatus, { label: string; tone: Tone }> = {
@@ -41,11 +43,35 @@ function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   );
 }
 
+function FileBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-accent-text"
+      title="Proof file attached"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden>
+        <path d="M21 12.5 12.5 21a4 4 0 0 1-5.7-5.7l8-8a2.5 2.5 0 0 1 3.5 3.5l-8 8a1 1 0 0 1-1.4-1.4l7.3-7.3" />
+      </svg>
+      file
+    </span>
+  );
+}
+
 function EvidenceCell({ row }: { row: ComplianceRowView }) {
-  if (row.status !== "filed") return <span className="text-[12px] text-faint">not filed</span>;
-  if (row.hasEvidence)
-    return <span className="tnum font-mono text-[12px] text-success">{row.proofRef}</span>;
-  return <span className="text-[12px] text-warning">no proof on file</span>;
+  const primary =
+    row.status !== "filed" ? (
+      <span className="text-[12px] text-faint">not filed</span>
+    ) : row.hasEvidence ? (
+      <span className="tnum font-mono text-[12px] text-success">{row.proofRef}</span>
+    ) : (
+      <span className="text-[12px] text-warning">no proof on file</span>
+    );
+  return (
+    <span className="flex items-center gap-2">
+      {primary}
+      {row.hasProofFile && <FileBadge />}
+    </span>
+  );
 }
 
 export function ComplianceTable({
@@ -150,7 +176,7 @@ export function ComplianceTable({
         onClose={() => setSelected(null)}
         title={selected?.name ?? ""}
         subtitle={selected ? `${selected.authority} · ${selected.period}` : undefined}
-        footer="Deterministic against your filing calendar. Evidence is a stored reference, not the document. Not tax advice."
+        footer="Deterministic against your filing calendar. Proof files are stored privately — only you can open them. Not tax advice."
       >
         {selected && (
           <>
@@ -216,6 +242,10 @@ export function ComplianceTable({
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <ComplianceProof deadlineId={selected.deadlineId} hasFile={selected.hasProofFile} />
             </div>
           </>
         )}

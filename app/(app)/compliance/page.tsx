@@ -1,4 +1,5 @@
 import { requireUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { getDashboardData } from "@/lib/data/dashboard";
 import {
   assessComplianceDeadline,
@@ -27,6 +28,14 @@ export default async function CompliancePage() {
     );
   }
 
+  // Which deadlines have an uploaded proof file — a storage-only field kept out
+  // of the rule-engine domain type, so look it up directly (owner-scoped).
+  const withFile = await db.complianceDeadline.findMany({
+    where: { ownerId: user.id, NOT: { proofFilePath: null } },
+    select: { id: true },
+  });
+  const fileIds = new Set(withFile.map((r) => r.id));
+
   const rows: ComplianceRowView[] = data.complianceDeadlines.map((d) => {
     const a = assessComplianceDeadline(d, data.complianceAsOf, data.ruleConfig.compliance);
     return {
@@ -39,6 +48,7 @@ export default async function CompliancePage() {
       status: a.status,
       daysToDue: a.daysToDue,
       hasEvidence: a.hasEvidence,
+      hasProofFile: fileIds.has(d.id),
     };
   });
 
