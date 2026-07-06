@@ -3,6 +3,7 @@ import { getDashboardData } from "@/lib/data/dashboard";
 import { buildOverview, type NeedsActionItem } from "@/lib/data/overview";
 import { groupActions } from "@/lib/report";
 import { formatINR } from "@/lib/format";
+import { getBusinessProfile } from "@/lib/data/businessProfile";
 import { ReportPrintButton } from "@/app/_components/ReportPrintButton";
 import { EmptyState } from "@/app/_components/ui";
 
@@ -66,7 +67,10 @@ function ReportSection({
 
 export default async function ReportPage() {
   const user = await requireUser();
-  const data = await getDashboardData(user.id);
+  const [data, profile] = await Promise.all([
+    getDashboardData(user.id),
+    getBusinessProfile(user.id),
+  ]);
   const overview = buildOverview(data);
   const { actNow, dueSoon, total } = groupActions(overview.needsAction);
   const generatedOn = dateFmt.format(new Date());
@@ -98,7 +102,13 @@ export default async function ReportPage() {
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
           <div>
             <h1 className="font-display text-lg font-semibold text-fg">GST money-safety report</h1>
-            <p className="mt-0.5 text-[12.5px] text-muted">{user.email}</p>
+            {profile.businessName && (
+              <p className="mt-1 text-[14px] font-semibold text-fg">{profile.businessName}</p>
+            )}
+            <p className="mt-0.5 text-[12.5px] text-muted">
+              {profile.gstin ? `${profile.gstin} · ` : ""}
+              {user.email}
+            </p>
           </div>
           <div className="text-right text-[12px] text-muted">
             <p>Generated {generatedOn}</p>
