@@ -94,7 +94,7 @@ export function RuleConfigEditor({
         </span>
         <p className="text-[12.5px] text-muted">
           Every number below feeds the deterministic rule engines. A CA can correct
-          any of them here — no code change, and no AI in the money math.
+          any of them here, with no code change and no AI anywhere in the money math.
         </p>
       </div>
 

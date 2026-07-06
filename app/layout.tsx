@@ -21,7 +21,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GST SafePay — Money-Safety Cockpit",
+  title: "GST SafePay · Money-Safety Cockpit",
   description:
     "Prevents money loss from India's MSME 45-day payment rule, GST IMS deadlines, and reverse-charge misses.",
 };

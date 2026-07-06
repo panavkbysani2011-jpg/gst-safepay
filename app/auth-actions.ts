@@ -24,7 +24,7 @@ export async function login(formData: FormData) {
   const ip = await clientIp();
   const limited = await rateLimit(`login:${ip}`, 10, 600);
   if (!limited.ok) {
-    redirect(loginUrl({ error: `Too many attempts — try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
+    redirect(loginUrl({ error: `Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
   }
 
   const email = String(formData.get("email") ?? "").trim();
@@ -42,7 +42,7 @@ export async function signup(formData: FormData) {
   const ip = await clientIp();
   const limited = await rateLimit(`signup:${ip}`, 10, 600);
   if (!limited.ok) {
-    redirect(loginUrl({ error: `Too many attempts — try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
+    redirect(loginUrl({ error: `Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
   }
 
   const email = String(formData.get("email") ?? "").trim();
@@ -59,7 +59,7 @@ export async function signup(formData: FormData) {
   // If email confirmation is enabled in Supabase, there is no session yet.
   if (!data.session) {
     redirect(
-      loginUrl({ notice: "Account created — check your email to confirm, then log in." })
+      loginUrl({ notice: "Account created. Check your email to confirm, then log in." })
     );
   }
 
@@ -71,7 +71,7 @@ export async function signInWithGoogle() {
   const ip = await clientIp();
   const limited = await rateLimit(`oauth:${ip}`, 15, 600);
   if (!limited.ok) {
-    redirect(loginUrl({ error: `Too many attempts — try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
+    redirect(loginUrl({ error: `Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
   }
 
   const supabase = await createClient();
@@ -102,7 +102,7 @@ export async function requestPasswordReset(formData: FormData) {
   if (!limited.ok) {
     redirect(
       `/forgot-password?${new URLSearchParams({
-        error: `Too many requests — try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
+        error: `Too many requests. Try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
       }).toString()}`
     );
   }
@@ -130,7 +130,7 @@ export async function updatePassword(formData: FormData) {
   const ip = await clientIp();
   const limited = await rateLimit(`update-pw:${ip}`, 15, 600);
   if (!limited.ok) {
-    redirect(resetUrl(`Too many attempts — try again in ${retryPhrase(limited.retryAfterSeconds)}.`));
+    redirect(resetUrl(`Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.`));
   }
 
   if (password.length < 6) {

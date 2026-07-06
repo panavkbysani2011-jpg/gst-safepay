@@ -23,7 +23,7 @@ export async function saveBusinessProfile(
   if (!limited.ok) {
     return {
       ok: false,
-      message: `Too many changes — try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
+      message: `Too many changes. Try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
     };
   }
 

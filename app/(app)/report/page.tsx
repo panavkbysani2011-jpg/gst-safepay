@@ -88,7 +88,7 @@ export default async function ReportPage() {
     <div className="flex flex-col gap-5">
       <div data-no-print className="flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-md text-[13px] text-muted">
-          A one-page summary to review or hand to your CA — print it or save as PDF.
+          A one-page summary to review or hand to your CA. Print it or save it as a PDF.
         </p>
         <ReportPrintButton />
       </div>
@@ -151,7 +151,7 @@ export default async function ReportPage() {
 
         <p className="mt-6 border-t border-border pt-4 text-[11px] leading-relaxed text-muted">
           Deterministic assessment against the tax rules configured for this account,
-          as of {generatedOn}. Figures are estimates to help prioritise action — not
+          as of {generatedOn}. Figures are estimates to help you prioritise. They are not
           tax advice or a filing. Verify with your chartered accountant before acting.
         </p>
       </div>

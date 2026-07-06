@@ -81,7 +81,7 @@ function buildSteps(r: RcmRowView, config: RcmCfg): Step[] {
     {
       n: "3",
       label: "RCM tax payable in cash by",
-      basis: `GSTR-3B due (day ${config.gstr3bDueDayOfNextMonth} of the next month) — RCM tax is cash, no ITC set-off`,
+      basis: `GSTR-3B due (day ${config.gstr3bDueDayOfNextMonth} of the next month). RCM tax is cash, no ITC set-off`,
       value: formatDate(r.rcmPaymentDueDate),
     },
   ];
@@ -235,7 +235,7 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
                   {formatINR(selected.rcmTaxDueInCash)}
                 </p>
                 <p className="mt-1 text-[12.5px] text-muted">
-                  Reverse-charge tax must be paid in cash — it cannot be set off with input-tax credit.
+                  Reverse-charge tax must be paid in cash. It cannot be set off with input-tax credit.
                 </p>
               </div>
             ) : (

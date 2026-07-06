@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, LegalSection } from "../../_components/LegalDoc";
 
-export const metadata: Metadata = { title: "Disclaimer — GST SafePay" };
+export const metadata: Metadata = { title: "Disclaimer · GST SafePay" };
 
 export default function DisclaimerPage() {
   return (
@@ -11,10 +11,10 @@ export default function DisclaimerPage() {
       intro="GST SafePay is a money-safety decision-support tool. It is not tax, legal or accounting advice."
     >
       <LegalSection heading="Not tax advice">
-        <p>The figures GST SafePay shows — lost deductions, penalty interest, ITC at risk and so on — are computed from published rule parameters (for example the RBI bank rate, the MSMED interest multiplier and assumed tax rates). During beta these parameters are <strong>placeholder defaults</strong>. They must be reviewed and confirmed by a qualified chartered accountant before you rely on any number for a real payment or filing.</p>
+        <p>The figures GST SafePay shows (lost deductions, penalty interest, ITC at risk and so on) are computed from published rule parameters, such as the RBI bank rate, the MSMED interest multiplier and assumed tax rates. During beta these parameters are <strong>placeholder defaults</strong>. A qualified chartered accountant needs to review and confirm them before you rely on any number for a real payment or filing.</p>
       </LegalSection>
 
-      <LegalSection heading="Deterministic, auditable — but only as good as its inputs">
+      <LegalSection heading="Deterministic and auditable, but only as good as its inputs">
         <p>Calculations are deterministic and traceable: every figure links to a rule and a legal basis you can inspect. However, outputs depend entirely on the accuracy and completeness of the data you upload. Wrong or missing rows produce wrong conclusions.</p>
       </LegalSection>
 

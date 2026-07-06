@@ -27,13 +27,13 @@ const STATUS: Record<VendorVerificationStatus, { label: string; tone: Tone }> = 
 };
 
 const ADVICE: Record<VendorVerificationStatus, string> = {
-  verified: "Verified recently and the GSTIN is well-formed — no action needed.",
+  verified: "Checked recently and the GSTIN is well-formed, so nothing to do here.",
   "recheck-due":
-    "It's been over the re-check window — re-verify this GSTIN on the GST portal before your next ITC claim against it.",
+    "It's been past the re-check window. Re-verify this GSTIN on the GST portal before your next ITC claim against it.",
   "never-verified":
-    "This GSTIN has never been checked on the portal — verify it once to confirm the supplier is active.",
+    "This GSTIN has never been checked on the portal. Verify it once to confirm the supplier is active.",
   "invalid-gstin":
-    "This GSTIN fails the format/checksum test — fix it before claiming any input-tax credit against this vendor.",
+    "This GSTIN fails the format and checksum test. Fix it before claiming any input-tax credit against this vendor.",
 };
 
 function lastCheckedLabel(row: VendorRowView): string {
