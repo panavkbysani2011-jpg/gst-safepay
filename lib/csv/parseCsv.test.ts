@@ -126,10 +126,11 @@ describe("parseBillsCsv", () => {
     expect(result.errors).toHaveLength(1);
   });
 
-  it("returns empty results for an empty file", () => {
+  it("flags an empty file with a clear message instead of silently importing nothing", () => {
     const result = parseBillsCsv("");
     expect(result.valid).toEqual([]);
-    expect(result.errors).toEqual([]);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toMatch(/right file|header/i);
   });
 });
 
@@ -264,5 +265,62 @@ describe("parseComplianceCsv", () => {
     const csv = [header, "c1,GSTR-3B,GST,2026-06,20-07-2026,,"].join("\n");
     const result = parseComplianceCsv(csv);
     expect(result.errors).toHaveLength(1);
+  });
+});
+
+describe("import hardening", () => {
+  const billHeader =
+    "id,vendorId,invoiceAcceptanceDate,amount,hasWrittenAgreement,agreedPaymentDays,paidDate";
+
+  it("rejects a file whose columns don't match this importer, with one clear message", () => {
+    const result = parseBillsCsv("foo,bar\n1,2");
+    expect(result.valid).toEqual([]);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].message).toMatch(/right file/i);
+  });
+
+  it("names the missing column when the header is incomplete", () => {
+    // amount column dropped
+    const csv = [
+      "id,vendorId,invoiceAcceptanceDate,hasWrittenAgreement,agreedPaymentDays,paidDate",
+      "b1,v1,2026-06-01,true,45,",
+    ].join("\n");
+    const result = parseBillsCsv(csv);
+    expect(result.valid).toEqual([]);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].message).toMatch(/missing column/i);
+    expect(result.errors[0].message).toContain("amount");
+  });
+
+  it("does not fire a per-row error storm for a wrong file (one message, not N)", () => {
+    const csv = ["foo,bar", "1,2", "3,4", "5,6"].join("\n");
+    const result = parseBillsCsv(csv);
+    expect(result.errors).toHaveLength(1);
+  });
+
+  it("accepts amounts with a rupee sign and Indian thousands commas", () => {
+    const csv = [billHeader, 'b1,v1,2026-06-01,"₹1,00,000",true,45,'].join("\n");
+    const result = parseBillsCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(1);
+    expect(result.valid[0].amount).toBe(100000);
+  });
+
+  it("flags a header-only file as having no data rows", () => {
+    const result = parseBillsCsv(billHeader + "\n");
+    expect(result.valid).toEqual([]);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].message).toMatch(/no data rows/i);
+  });
+
+  it("rejects a file over the row cap instead of processing all of it", () => {
+    const rows = Array.from(
+      { length: 5001 },
+      (_, i) => `b${i},v1,2026-06-01,1000,true,,`
+    );
+    const result = parseBillsCsv([billHeader, ...rows].join("\n"));
+    expect(result.valid).toEqual([]);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0].message).toMatch(/limit/i);
   });
 });
