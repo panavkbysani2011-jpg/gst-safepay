@@ -65,4 +65,20 @@ describe("rankBillsByRisk", () => {
   it("returns an empty list when given no bills", () => {
     expect(rankBillsByRisk([])).toEqual([]);
   });
+
+  it("breaks ties on equal cost by fewer days remaining (more overdue first)", () => {
+    const ranked = rankBillsByRisk([
+      risk({ billId: "less-overdue", status: "breached", totalCostOfDelay: 10000, daysRemaining: -2 }),
+      risk({ billId: "more-overdue", status: "breached", totalCostOfDelay: 10000, daysRemaining: -10 }),
+    ]);
+    expect(ranked.map((r) => r.billId)).toEqual(["more-overdue", "less-overdue"]);
+  });
+
+  it("ranks a costly breach above an imminent due-soon bill", () => {
+    const ranked = rankBillsByRisk([
+      risk({ billId: "due-tomorrow", status: "due-soon", totalCostOfDelay: 0, daysRemaining: 1 }),
+      risk({ billId: "breach", status: "breached", totalCostOfDelay: 30000, daysRemaining: -5 }),
+    ]);
+    expect(ranked.map((r) => r.billId)).toEqual(["breach", "due-tomorrow"]);
+  });
 });

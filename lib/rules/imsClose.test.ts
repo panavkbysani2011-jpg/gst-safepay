@@ -156,3 +156,62 @@ describe("summarizeImsClose", () => {
     expect(summary.nextCutoffDate).toBeNull();
   });
 });
+
+describe("assessImsInvoice — cutoff-window boundaries and overrides", () => {
+  // taxPeriod "2026-06" -> cutoff 2026-07-14; default warning window = 3 days.
+  it("is 'deemed-accept-imminent' exactly at the edge of the warning window", () => {
+    // asOf 2026-07-11 -> daysToCutoff 3 (== window)
+    const r = assessImsInvoice(
+      invoice({ taxPeriod: "2026-06" }),
+      "2026-07-11",
+      DEFAULT_IMS_RULE_CONFIG
+    );
+    expect(r.daysToCutoff).toBe(3);
+    expect(r.status).toBe("deemed-accept-imminent");
+  });
+
+  it("is 'action-required' one day outside the warning window", () => {
+    // asOf 2026-07-10 -> daysToCutoff 4 (> window)
+    const r = assessImsInvoice(
+      invoice({ taxPeriod: "2026-06" }),
+      "2026-07-10",
+      DEFAULT_IMS_RULE_CONFIG
+    );
+    expect(r.daysToCutoff).toBe(4);
+    expect(r.status).toBe("action-required");
+  });
+
+  it("is still 'deemed-accept-imminent' on the cutoff day itself (last chance to act)", () => {
+    const r = assessImsInvoice(
+      invoice({ taxPeriod: "2026-06" }),
+      "2026-07-14",
+      DEFAULT_IMS_RULE_CONFIG
+    );
+    expect(r.daysToCutoff).toBe(0);
+    expect(r.status).toBe("deemed-accept-imminent");
+  });
+
+  it("is 'auto-accepted-missed' one day after the cutoff", () => {
+    const r = assessImsInvoice(
+      invoice({ taxPeriod: "2026-06" }),
+      "2026-07-15",
+      DEFAULT_IMS_RULE_CONFIG
+    );
+    expect(r.daysToCutoff).toBe(-1);
+    expect(r.status).toBe("auto-accepted-missed");
+  });
+
+  it("respects a CA-configured cutoff day", () => {
+    const cfg = { ...DEFAULT_IMS_RULE_CONFIG, gstr2bCutoffDayOfNextMonth: 20 };
+    const r = assessImsInvoice(invoice({ taxPeriod: "2026-06" }), ASOF, cfg);
+    expect(r.cutoffDate).toBe("2026-07-20");
+  });
+
+  it("summarizes an empty invoice list to zeros and a null next cutoff", () => {
+    const s = summarizeImsClose([], ASOF, DEFAULT_IMS_RULE_CONFIG);
+    expect(s.totalInvoices).toBe(0);
+    expect(s.actionRequiredCount).toBe(0);
+    expect(s.totalItcAtRisk).toBe(0);
+    expect(s.nextCutoffDate).toBeNull();
+  });
+});

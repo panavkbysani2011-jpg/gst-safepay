@@ -172,3 +172,72 @@ describe("summarizeRcm", () => {
     expect(s.totalInterestExposure).toBeGreaterThan(0); // a's overdue payment
   });
 });
+
+describe("assessRcmPurchase — boundaries and overrides", () => {
+  // ASOF 2026-07-15; self-invoice window 7 days; selfInvoiceDays 30.
+  it("marks the self-invoice 'due-soon' exactly on the deadline day (0 days left)", () => {
+    // supplyDate 2026-06-15 + 30 -> deadline 2026-07-15 == ASOF
+    const r = assessRcmPurchase(
+      purchase({ supplyDate: "2026-06-15" }),
+      ASOF,
+      DEFAULT_RCM_RULE_CONFIG
+    );
+    expect(r.selfInvoiceDeadline).toBe("2026-07-15");
+    expect(r.selfInvoiceStatus).toBe("due-soon");
+    expect(r.penaltyExposure).toBe(0);
+  });
+
+  it("marks the self-invoice 'overdue' one day after the deadline", () => {
+    // supplyDate 2026-06-14 + 30 -> deadline 2026-07-14, one day before ASOF
+    const r = assessRcmPurchase(
+      purchase({ supplyDate: "2026-06-14" }),
+      ASOF,
+      DEFAULT_RCM_RULE_CONFIG
+    );
+    expect(r.selfInvoiceDeadline).toBe("2026-07-14");
+    expect(r.selfInvoiceStatus).toBe("overdue");
+    expect(r.penaltyExposure).toBe(10000);
+  });
+
+  it("marks RCM tax paid exactly on the due date 'paid-on-time'", () => {
+    // goods supply 2026-04-01 -> ToS 2026-05-01 -> due 2026-06-20; pay same day
+    const r = assessRcmPurchase(
+      purchase({ supplyDate: "2026-04-01", rcmTaxPaidDate: "2026-06-20" }),
+      ASOF,
+      DEFAULT_RCM_RULE_CONFIG
+    );
+    expect(r.rcmPaymentDueDate).toBe("2026-06-20");
+    expect(r.rcmPaymentStatus).toBe("paid-on-time");
+    expect(r.projectedInterestCost).toBe(0);
+  });
+
+  it("rolls the services time-of-supply across a year boundary", () => {
+    // services supply 2026-11-15 + 60 -> ToS 2027-01-14 -> due 2027-02-20
+    const r = assessRcmPurchase(
+      purchase({ supplyType: "services", supplyDate: "2026-11-15" }),
+      ASOF,
+      DEFAULT_RCM_RULE_CONFIG
+    );
+    expect(r.timeOfSupply).toBe("2027-01-14");
+    expect(r.rcmPaymentDueDate).toBe("2027-02-20");
+  });
+
+  it("respects a CA-configured self-invoice window", () => {
+    const cfg = { ...DEFAULT_RCM_RULE_CONFIG, selfInvoiceDays: 15 };
+    // supply 2026-07-01 + 15 -> deadline 2026-07-16
+    const r = assessRcmPurchase(
+      purchase({ supplyDate: "2026-07-01" }),
+      ASOF,
+      cfg
+    );
+    expect(r.selfInvoiceDeadline).toBe("2026-07-16");
+  });
+
+  it("summarizes an empty purchase list to zeros", () => {
+    const s = summarizeRcm([], ASOF, DEFAULT_RCM_RULE_CONFIG);
+    expect(s.totalPurchases).toBe(0);
+    expect(s.totalRcmCashDue).toBe(0);
+    expect(s.totalPenaltyExposure).toBe(0);
+    expect(s.totalInterestExposure).toBe(0);
+  });
+});

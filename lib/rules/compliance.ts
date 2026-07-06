@@ -1,3 +1,4 @@
+import { daysBetween } from "./dateUtil";
 import type {
   ComplianceAssessment,
   ComplianceDeadline,
@@ -5,14 +6,6 @@ import type {
   ComplianceStatus,
   ComplianceSummary,
 } from "./types";
-
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = new Date(fromIso).getTime();
-  const to = new Date(toIso).getTime();
-  return Math.round((to - from) / MS_PER_DAY);
-}
 
 export function assessComplianceDeadline(
   deadline: ComplianceDeadline,

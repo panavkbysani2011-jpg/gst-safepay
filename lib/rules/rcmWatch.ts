@@ -1,3 +1,4 @@
+import { addDays, daysBetween } from "./dateUtil";
 import type {
   RcmAssessment,
   RcmPaymentStatus,
@@ -7,20 +8,7 @@ import type {
   RcmSummary,
 } from "./types";
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const DAYS_PER_YEAR = 365;
-
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = new Date(fromIso).getTime();
-  const to = new Date(toIso).getTime();
-  return Math.round((to - from) / MS_PER_DAY);
-}
-
-function addDays(iso: string, days: number): string {
-  const date = new Date(iso);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
 
 /** The configured day of the month AFTER the given "YYYY-MM" period, e.g. "2026-05" + 20 -> "2026-06-20". */
 function dueDayOfNextMonth(period: string, day: number): string {

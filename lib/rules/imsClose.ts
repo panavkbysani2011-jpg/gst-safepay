@@ -1,3 +1,4 @@
+import { daysBetween } from "./dateUtil";
 import type {
   ImsAssessment,
   ImsCloseSummary,
@@ -5,14 +6,7 @@ import type {
   ImsRuleConfig,
 } from "./types";
 
-const MS_PER_DAY = 1000 * 60 * 60 * 24;
 const DAYS_PER_YEAR = 365;
-
-function daysBetween(fromIso: string, toIso: string): number {
-  const from = new Date(fromIso).getTime();
-  const to = new Date(toIso).getTime();
-  return Math.round((to - from) / MS_PER_DAY);
-}
 
 /**
  * GSTR-2B cutoff for a tax period = the configured day of the month AFTER that period.
