@@ -15,6 +15,9 @@ const TRUE_VALUES = new Set(["true", "1", "yes", "y"]);
 const FALSE_VALUES = new Set(["false", "0", "no", "n"]);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
+// A generous ceiling so one accidental giant export can't lock up the browser.
+const MAX_ROWS = 5000;
+
 function coerceBoolean(value: unknown, fallback: boolean): boolean {
   if (value === undefined || value === null) return fallback;
   const s = String(value).trim().toLowerCase();
@@ -30,10 +33,20 @@ function emptyToNull(value: unknown): string | null {
   return s === "" ? null : s;
 }
 
+// Tolerate the numeric formatting real exports carry: a ₹ sign, thousands
+// commas ("₹1,00,000"), stray spaces, or a leading +. Cells with a comma must
+// be quoted in the CSV, otherwise the parser splits them into extra columns.
+function toNumber(value: unknown): number {
+  const s = String(value ?? "")
+    .trim()
+    .replace(/[₹,\s]/g, "")
+    .replace(/^\+/, "");
+  return s === "" ? NaN : Number(s);
+}
+
 function requireNumber(value: unknown, field: string): number {
-  const s = String(value ?? "").trim();
-  const n = Number(s);
-  if (s === "" || Number.isNaN(n)) {
+  const n = toNumber(value);
+  if (Number.isNaN(n)) {
     throw new Error(`invalid ${field} "${value ?? ""}"`);
   }
   return n;
@@ -73,15 +86,76 @@ export type BillInput = z.infer<typeof BillSchema>;
 
 type RawRow = Record<string, string>;
 
-function parseRows<T>(csv: string, mapRow: (raw: RawRow) => T): ParseResult<T> {
+function parseRows<T>(
+  csv: string,
+  requiredColumns: string[],
+  mapRow: (raw: RawRow) => T
+): ParseResult<T> {
   const valid: T[] = [];
   const errors: RowError[] = [];
 
   const parsed = Papa.parse<RawRow>(csv, {
     header: true,
-    skipEmptyLines: true,
+    skipEmptyLines: "greedy",
     transformHeader: (h) => h.trim(),
   });
+
+  // Header check first: catch the two most common mistakes — uploading the
+  // wrong file into this slot, or dropping the header row — with one clear
+  // message instead of a cryptic error on every single row.
+  const headers = parsed.meta.fields ?? [];
+  const missing = requiredColumns.filter((c) => !headers.includes(c));
+  if (headers.length === 0 || missing.length === requiredColumns.length) {
+    return {
+      valid: [],
+      errors: [
+        {
+          row: 1,
+          message: `This doesn't look like the right file here. Expected columns like ${requiredColumns.join(
+            ", "
+          )}. Keep the header row from the sample.`,
+        },
+      ],
+    };
+  }
+  if (missing.length > 0) {
+    return {
+      valid: [],
+      errors: [
+        {
+          row: 1,
+          message: `Missing ${missing.length > 1 ? "columns" : "column"}: ${missing.join(
+            ", "
+          )}. Check the header row matches the sample.`,
+        },
+      ],
+    };
+  }
+
+  if (parsed.data.length > MAX_ROWS) {
+    return {
+      valid: [],
+      errors: [
+        {
+          row: 1,
+          message: `This file has ${parsed.data.length} rows, over the ${MAX_ROWS}-row limit. Split it into smaller files.`,
+        },
+      ],
+    };
+  }
+
+  // Structural problems the parser hit (unbalanced quotes, ragged rows).
+  for (const e of parsed.errors) {
+    const rowNumber = typeof e.row === "number" ? e.row + 2 : 1;
+    errors.push({ row: rowNumber, message: `Could not read this row. Check for stray quotes or commas.` });
+  }
+
+  if (parsed.data.length === 0) {
+    if (errors.length === 0) {
+      errors.push({ row: 1, message: "No data rows found. Add at least one row below the header." });
+    }
+    return { valid, errors };
+  }
 
   parsed.data.forEach((raw, index) => {
     // +2: one for the header row, one to make it 1-indexed like a spreadsheet.
@@ -97,7 +171,7 @@ function parseRows<T>(csv: string, mapRow: (raw: RawRow) => T): ParseResult<T> {
 }
 
 export function parseVendorsCsv(csv: string): ParseResult<VendorInput> {
-  return parseRows(csv, (raw) =>
+  return parseRows(csv, ["id", "name", "gstin"], (raw) =>
     VendorSchema.parse({
       id: (raw.id ?? "").trim(),
       name: (raw.name ?? "").trim(),
@@ -110,15 +184,11 @@ export function parseVendorsCsv(csv: string): ParseResult<VendorInput> {
 }
 
 export function parseBillsCsv(csv: string): ParseResult<BillInput> {
-  return parseRows(csv, (raw) => {
-    const rawAmount = (raw.amount ?? "").trim();
-    const amount = Number(rawAmount);
-    if (rawAmount === "" || Number.isNaN(amount)) {
-      throw new Error(`invalid amount "${raw.amount}"`);
-    }
+  return parseRows(csv, ["id", "vendorId", "invoiceAcceptanceDate", "amount"], (raw) => {
+    const amount = requireNumber(raw.amount, "amount");
 
     const rawDays = (raw.agreedPaymentDays ?? "").trim();
-    const agreedPaymentDays = rawDays === "" ? null : Number(rawDays);
+    const agreedPaymentDays = rawDays === "" ? null : toNumber(raw.agreedPaymentDays);
     if (agreedPaymentDays !== null && Number.isNaN(agreedPaymentDays)) {
       throw new Error(`invalid agreedPaymentDays "${raw.agreedPaymentDays}"`);
     }
@@ -152,7 +222,10 @@ const ImsInvoiceSchema = z.object({
 export type ImsInvoiceInput = z.infer<typeof ImsInvoiceSchema>;
 
 export function parseImsCsv(csv: string): ParseResult<ImsInvoiceInput> {
-  return parseRows(csv, (raw) =>
+  return parseRows(
+    csv,
+    ["id", "vendorId", "vendorName", "invoiceNo", "taxPeriod", "taxableValue", "gstAmount", "imsAction", "eligibility"],
+    (raw) =>
     ImsInvoiceSchema.parse({
       id: (raw.id ?? "").trim(),
       vendorId: (raw.vendorId ?? "").trim(),
@@ -182,7 +255,10 @@ const RcmPurchaseSchema = z.object({
 export type RcmPurchaseInput = z.infer<typeof RcmPurchaseSchema>;
 
 export function parseRcmCsv(csv: string): ParseResult<RcmPurchaseInput> {
-  return parseRows(csv, (raw) =>
+  return parseRows(
+    csv,
+    ["id", "vendorId", "vendorName", "supplyType", "supplyDate", "rcmTaxAmount"],
+    (raw) =>
     RcmPurchaseSchema.parse({
       id: (raw.id ?? "").trim(),
       vendorId: (raw.vendorId ?? "").trim(),
@@ -212,7 +288,10 @@ export type ComplianceDeadlineInput = z.infer<typeof ComplianceDeadlineSchema>;
 export function parseComplianceCsv(
   csv: string
 ): ParseResult<ComplianceDeadlineInput> {
-  return parseRows(csv, (raw) =>
+  return parseRows(
+    csv,
+    ["id", "name", "authority", "period", "dueDate"],
+    (raw) =>
     ComplianceDeadlineSchema.parse({
       id: (raw.id ?? "").trim(),
       name: (raw.name ?? "").trim(),
