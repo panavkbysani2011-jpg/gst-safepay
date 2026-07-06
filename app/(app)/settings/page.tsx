@@ -4,10 +4,15 @@ import { getRuleConfig } from "@/lib/data/ruleConfig";
 import { isDefaultRuleConfig } from "@/lib/rules/ruleConfig";
 import { RuleConfigEditor } from "@/app/_components/RuleConfigEditor";
 import { DeleteAccountButton } from "@/app/_components/DeleteAccountButton";
+import { getBusinessProfile } from "@/lib/data/businessProfile";
+import { BusinessDetailsForm } from "@/app/_components/BusinessDetailsForm";
 
 export default async function SettingsPage() {
   const user = await requireUser();
-  const config = await getRuleConfig(user.id);
+  const [config, profile] = await Promise.all([
+    getRuleConfig(user.id),
+    getBusinessProfile(user.id),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -21,6 +26,16 @@ export default async function SettingsPage() {
         <p className="mt-3 text-[12.5px] text-faint">
           Switch the colour theme any time from the toggle in the top bar.
         </p>
+      </section>
+
+      {/* Business details — firm identity shown on the action report */}
+      <section className="rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
+        <h2 className="font-display text-lg font-semibold text-fg">Business details</h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-muted">
+          Your firm name and GSTIN. These appear on the printable action report you
+          hand to your CA.
+        </p>
+        <BusinessDetailsForm profile={profile} />
       </section>
 
       {/* Rule configuration — CA-editable tax parameters that drive every engine */}

@@ -85,3 +85,14 @@ create policy "owner_all" on public."RuleConfig"
   with check ((select auth.uid())::text = "ownerId");
 revoke all on public."RuleConfig" from anon;
 revoke truncate on public."RuleConfig" from authenticated;
+
+-- ── BusinessProfile ──────────────────────────────────────────────────────
+-- Per-owner firm identity (name + GSTIN) — same owner-only isolation.
+alter table public."BusinessProfile" enable row level security;
+drop policy if exists "owner_all" on public."BusinessProfile";
+create policy "owner_all" on public."BusinessProfile"
+  for all to authenticated
+  using ((select auth.uid())::text = "ownerId")
+  with check ((select auth.uid())::text = "ownerId");
+revoke all on public."BusinessProfile" from anon;
+revoke truncate on public."BusinessProfile" from authenticated;

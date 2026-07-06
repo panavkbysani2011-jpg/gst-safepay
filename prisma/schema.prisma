@@ -114,3 +114,12 @@ model RuleConfig {
   values    Json
   updatedAt DateTime @updatedAt
 }
+
+// Business identity — optional firm name + GSTIN shown on the action report.
+// One row per account.
+model BusinessProfile {
+  ownerId      String   @id
+  businessName String?
+  gstin        String?
+  updatedAt    DateTime @updatedAt
+}
