@@ -40,9 +40,12 @@ const STATUS_TONE: Record<ImsStatus, Tone> = {
 };
 
 function cutoffLabel(d: number): string {
-  if (d < 0) return `${Math.abs(d)} days ago`;
+  if (d < 0) {
+    const n = Math.abs(d);
+    return `${n} ${n === 1 ? "day" : "days"} ago`;
+  }
   if (d === 0) return "today";
-  return `in ${d} days`;
+  return `in ${d} ${d === 1 ? "day" : "days"}`;
 }
 
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {

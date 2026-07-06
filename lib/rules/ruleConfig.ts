@@ -144,8 +144,8 @@ export const RULE_CONFIG_GROUPS: RuleGroup[] = [
     legalBasis: "GST Rule 47A; §12(3)/§13(3) time of supply; §50 interest; §122 penalty.",
     fields: [
       { group: "rcm", key: "selfInvoiceDays", label: "Self-invoice window", help: "Days to issue a self-invoice for an unregistered supplier (Rule 47A).", unit: "days" },
-      { group: "rcm", key: "timeOfSupplyDaysGoods", label: "Time of supply — goods", help: "Time-of-supply cap for goods (§12(3)).", unit: "days" },
-      { group: "rcm", key: "timeOfSupplyDaysServices", label: "Time of supply — services", help: "Time-of-supply cap for services (§13(3)).", unit: "days" },
+      { group: "rcm", key: "timeOfSupplyDaysGoods", label: "Time of supply (goods)", help: "Time-of-supply cap for goods (§12(3)).", unit: "days" },
+      { group: "rcm", key: "timeOfSupplyDaysServices", label: "Time of supply (services)", help: "Time-of-supply cap for services (§13(3)).", unit: "days" },
       { group: "rcm", key: "gstr3bDueDayOfNextMonth", label: "GSTR-3B due day", help: "Day of the next month the RCM cash tax is due.", unit: "day-of-month" },
       { group: "rcm", key: "latePaymentInterestRatePercent", label: "Late-payment interest", help: "GST §50 interest on late RCM tax.", unit: "%" },
       { group: "rcm", key: "lateSelfInvoicePenalty", label: "Missed self-invoice penalty", help: "§122 penalty for a missed self-invoice (flat default).", unit: "₹" },

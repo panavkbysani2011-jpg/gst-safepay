@@ -28,9 +28,12 @@ const STATUS: Record<ComplianceStatus, { label: string; tone: Tone }> = {
 };
 
 function dueLabel(daysToDue: number): string {
-  if (daysToDue < 0) return `${Math.abs(daysToDue)} days overdue`;
+  if (daysToDue < 0) {
+    const n = Math.abs(daysToDue);
+    return `${n} ${n === 1 ? "day" : "days"} overdue`;
+  }
   if (daysToDue === 0) return "due today";
-  return `in ${daysToDue} days`;
+  return `in ${daysToDue} ${daysToDue === 1 ? "day" : "days"}`;
 }
 
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
@@ -99,7 +102,9 @@ export function ComplianceTable({
             <span className="tnum font-mono font-semibold text-warning">
               {summary.evidenceGapCount}
             </span>{" "}
-            <span className="text-faint">evidence gaps</span>
+            <span className="text-faint">
+              {summary.evidenceGapCount === 1 ? "evidence gap" : "evidence gaps"}
+            </span>
           </span>
         </div>
       </div>
