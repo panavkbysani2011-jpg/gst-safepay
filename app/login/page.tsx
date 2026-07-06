@@ -28,6 +28,10 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
   const { error, notice } = await searchParams;
+  // Only show "Continue with Google" once the provider is actually enabled in
+  // Supabase. Set NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true after wiring it up, so
+  // clicking it can never strand a user on Supabase's raw error page.
+  const googleEnabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
 
   return (
     <main className="min-h-screen w-full lg:grid lg:grid-cols-[1.05fr_1fr]">
@@ -114,15 +118,19 @@ export default async function LoginPage({
             </p>
           </div>
 
-          <form action={signInWithGoogle} className="animate-rise">
-            <GoogleSignInButton />
-          </form>
+          {googleEnabled && (
+            <>
+              <form action={signInWithGoogle} className="animate-rise">
+                <GoogleSignInButton />
+              </form>
 
-          <div className="flex items-center gap-3">
-            <span className="h-px flex-1 bg-border" />
-            <span className="text-xs text-faint">or use your email</span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
+              <div className="flex items-center gap-3">
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-xs text-faint">or use your email</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+            </>
+          )}
 
           <form className="animate-rise flex flex-col gap-4">
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
