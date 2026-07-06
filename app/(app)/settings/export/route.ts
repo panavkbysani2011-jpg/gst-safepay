@@ -6,14 +6,24 @@ import { db } from "@/lib/db";
 export async function GET() {
   const user = await requireUser();
 
-  const [vendors, bills, imsInvoices, rcmPurchases, complianceDeadlines] =
-    await Promise.all([
-      db.vendor.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
-      db.bill.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
-      db.imsInvoice.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
-      db.rcmPurchase.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
-      db.complianceDeadline.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
-    ]);
+  const [
+    vendors,
+    bills,
+    imsInvoices,
+    rcmPurchases,
+    complianceDeadlines,
+    ruleConfig,
+    businessProfile,
+  ] = await Promise.all([
+    db.vendor.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
+    db.bill.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
+    db.imsInvoice.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
+    db.rcmPurchase.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
+    db.complianceDeadline.findMany({ where: { ownerId: user.id }, orderBy: { id: "asc" } }),
+    // CA rule overrides + business identity: one row per account (keyed by ownerId).
+    db.ruleConfig.findUnique({ where: { ownerId: user.id } }),
+    db.businessProfile.findUnique({ where: { ownerId: user.id } }),
+  ]);
 
   const payload = {
     exportedAt: new Date().toISOString(),
@@ -24,8 +34,18 @@ export async function GET() {
       imsInvoices: imsInvoices.length,
       rcmPurchases: rcmPurchases.length,
       complianceDeadlines: complianceDeadlines.length,
+      ruleConfig: ruleConfig ? 1 : 0,
+      businessProfile: businessProfile ? 1 : 0,
     },
-    data: { vendors, bills, imsInvoices, rcmPurchases, complianceDeadlines },
+    data: {
+      vendors,
+      bills,
+      imsInvoices,
+      rcmPurchases,
+      complianceDeadlines,
+      ruleConfig,
+      businessProfile,
+    },
   };
 
   const date = new Date().toISOString().slice(0, 10);
