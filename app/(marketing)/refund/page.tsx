@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, LegalSection } from "../../_components/LegalDoc";
 
-export const metadata: Metadata = { title: "Refund & Cancellation — GST SafePay" };
+export const metadata: Metadata = { title: "Refund & Cancellation · GST SafePay" };
 
 export default function RefundPage() {
   return (
@@ -18,7 +18,7 @@ export default function RefundPage() {
         <ul>
           <li>Subscriptions will be billed monthly or annually in advance, with pricing shown clearly before you pay.</li>
           <li>You may cancel at any time; cancellation stops the next renewal and you keep access until the end of the paid period.</li>
-          <li>We plan to offer a <strong>7-day refund</strong> on a first paid subscription if the Service does not work as described — contact us within 7 days of the charge.</li>
+          <li>We plan to offer a <strong>7-day refund</strong> on a first paid subscription if the Service does not work as described. Just contact us within 7 days of the charge.</li>
         </ul>
       </LegalSection>
 

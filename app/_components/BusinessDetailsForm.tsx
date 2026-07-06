@@ -38,7 +38,7 @@ export function BusinessDetailsForm({ profile }: { profile: BusinessProfile }) {
           className={`${inputClass} font-mono uppercase`}
         />
         <span className="mt-1 block text-[11.5px] text-faint">
-          Format and checksum are validated offline — this does not confirm the GSTIN is live on the portal.
+          We check the format and checksum offline. That does not confirm the GSTIN is live on the portal.
         </span>
       </label>
 

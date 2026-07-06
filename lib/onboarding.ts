@@ -54,7 +54,7 @@ export function getGettingStartedState(counts: GettingStartedCounts): GettingSta
     },
     {
       key: "bills",
-      title: "Add bills — see who to pay first",
+      title: "Add bills to see who to pay first",
       help: "Track MSME 45-day deadlines and the real cost of paying late.",
       actionHref: "/import",
       actionLabel: "Import bills",

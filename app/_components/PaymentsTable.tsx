@@ -9,9 +9,12 @@ import { DetailDrawer } from "./DetailDrawer";
 
 function daysLabel(daysRemaining: number | null): string {
   if (daysRemaining === null) return "—";
-  if (daysRemaining < 0) return `${Math.abs(daysRemaining)} days overdue`;
+  if (daysRemaining < 0) {
+    const n = Math.abs(daysRemaining);
+    return `${n} ${n === 1 ? "day" : "days"} overdue`;
+  }
   if (daysRemaining === 0) return "Due today";
-  return `${daysRemaining} days left`;
+  return `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} left`;
 }
 
 function deadlineBasis(deadlineDays: number | null, config: PaymentCfg): string {

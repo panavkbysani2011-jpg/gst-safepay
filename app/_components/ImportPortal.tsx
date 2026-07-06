@@ -63,7 +63,7 @@ const CARDS: CardConfig[] = [
     action: uploadVendorsCsv,
     parse: parseVendorsCsv,
     title: "Vendors",
-    purpose: "Your suppliers. Upload this first — everything else links to it.",
+    purpose: "Your suppliers. Upload this first, since everything else links to it.",
     sample: "/samples/vendors-sample.csv",
     columns: "id, name, gstin, gstinActive, udyamRegistered, udyamCategory",
     viewHref: "/vendors",
@@ -80,7 +80,7 @@ const CARDS: CardConfig[] = [
       "id, vendorId, invoiceAcceptanceDate, amount, hasWrittenAgreement, agreedPaymentDays, paidDate",
     viewHref: "/payments",
     viewLabel: "View payments",
-    note: "Each row's vendorId must match a vendor id you uploaded in step 1 — mismatches are skipped when you confirm.",
+    note: "Each row's vendorId must match a vendor id you uploaded in step 1. Mismatches are skipped when you confirm.",
   },
   {
     step: 3,
@@ -264,7 +264,7 @@ function PreviewPanel({
 
       {rows.length === 0 ? (
         <p className="text-[12.5px] text-danger">
-          Nothing to import — fix the errors above and choose the file again.
+          Nothing to import. Fix the errors above and choose the file again.
         </p>
       ) : null}
 
@@ -475,7 +475,7 @@ function HowItWorks() {
     },
     {
       t: "2 · You preview, then confirm",
-      d: "The moment you pick a file we show exactly what will be imported — how many rows, and which have errors — before anything is saved. You confirm; nothing is written until you do.",
+      d: "The moment you pick a file we show exactly what will be imported (how many rows, and which have errors) before anything is saved. You confirm, and nothing is written until you do.",
     },
     {
       t: "3 · Rules flag your money at risk",
@@ -567,7 +567,7 @@ export function ImportPortal() {
         <h2 className="mb-1 font-display text-base font-semibold text-fg">Or upload your own</h2>
         <p className="mb-4 text-[13px] text-muted">
           Do them in order. Download a sample, replace the example rows with your data, keep the
-          header row, then upload — you&apos;ll see a preview before anything is saved.
+          header row, then upload. You&apos;ll see a preview before anything is saved.
         </p>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {CARDS.map((card) => (

@@ -45,7 +45,7 @@ export default async function SettingsPage() {
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
             The tax parameters behind every calculation. Ship-defaults reflect current
             law; your chartered accountant can correct any value for your firm and it
-            flows straight into the money math — auditable, deterministic, no code change.
+            flows straight into the money math, so every figure stays auditable and deterministic, with no code change.
           </p>
         </div>
         <RuleConfigEditor config={config} isCustomised={!isDefaultRuleConfig(config)} />
@@ -55,8 +55,8 @@ export default async function SettingsPage() {
       <section className="rounded-2xl border border-border bg-surface p-6 shadow-[var(--shadow)]">
         <h2 className="font-display text-lg font-semibold text-fg">Your data</h2>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-          Download everything we hold for your account — vendors, bills, GST IMS
-          invoices, reverse-charge purchases and compliance filings — as a single
+          Download everything we hold for your account (vendors, bills, GST IMS
+          invoices, reverse-charge purchases and compliance filings) as a single
           JSON file. Nothing is shared with anyone else.
         </p>
         <a
@@ -83,7 +83,7 @@ export default async function SettingsPage() {
         <h2 className="font-display text-lg font-semibold text-danger">Delete account</h2>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
           Permanently delete your account and every record tied to it. This is
-          immediate and cannot be undone — export your data first if you might need it.
+          immediate and cannot be undone, so export your data first if you might need it.
         </p>
         <div className="mt-4">
           <DeleteAccountButton />

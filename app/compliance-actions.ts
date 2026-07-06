@@ -33,7 +33,7 @@ export async function uploadComplianceProof(
 
   const limited = await rateLimit(`proof:${user.id}`, 30, 600);
   if (!limited.ok) {
-    return { ok: false, message: `Too many uploads — try again in ${retryPhrase(limited.retryAfterSeconds)}.` };
+    return { ok: false, message: `Too many uploads. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` };
   }
 
   const deadlineId = String(formData.get("deadlineId") ?? "");
@@ -55,7 +55,7 @@ export async function uploadComplianceProof(
   const { error } = await supabase.storage
     .from(BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type });
-  if (error) return { ok: false, message: "Upload failed — please try again." };
+  if (error) return { ok: false, message: "Upload failed. Please try again." };
 
   await db.complianceDeadline.update({
     where: { ownerId_id: { ownerId: user.id, id: deadlineId } },

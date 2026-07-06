@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, LegalSection } from "../../_components/LegalDoc";
 
-export const metadata: Metadata = { title: "Terms of Service — GST SafePay" };
+export const metadata: Metadata = { title: "Terms of Service · GST SafePay" };
 
 export default function TermsPage() {
   return (

@@ -28,9 +28,12 @@ const STATUS: Record<ComplianceStatus, { label: string; tone: Tone }> = {
 };
 
 function dueLabel(daysToDue: number): string {
-  if (daysToDue < 0) return `${Math.abs(daysToDue)} days overdue`;
+  if (daysToDue < 0) {
+    const n = Math.abs(daysToDue);
+    return `${n} ${n === 1 ? "day" : "days"} overdue`;
+  }
   if (daysToDue === 0) return "due today";
-  return `in ${daysToDue} days`;
+  return `in ${daysToDue} ${daysToDue === 1 ? "day" : "days"}`;
 }
 
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
@@ -99,7 +102,9 @@ export function ComplianceTable({
             <span className="tnum font-mono font-semibold text-warning">
               {summary.evidenceGapCount}
             </span>{" "}
-            <span className="text-faint">evidence gaps</span>
+            <span className="text-faint">
+              {summary.evidenceGapCount === 1 ? "evidence gap" : "evidence gaps"}
+            </span>
           </span>
         </div>
       </div>
@@ -176,7 +181,7 @@ export function ComplianceTable({
         onClose={() => setSelected(null)}
         title={selected?.name ?? ""}
         subtitle={selected ? `${selected.authority} · ${selected.period}` : undefined}
-        footer="Deterministic against your filing calendar. Proof files are stored privately — only you can open them. Not tax advice."
+        footer="Deterministic against your filing calendar. Proof files are stored privately, so only you can open them. Not tax advice."
       >
         {selected && (
           <>
@@ -201,19 +206,19 @@ export function ComplianceTable({
                       : "text-muted"
               }`}>
                 {selected.status === "filed" && !selected.hasEvidence
-                  ? "Filed — no proof on file"
+                  ? "Filed, no proof on file"
                   : STATUS[selected.status].label}
               </p>
               <p className="mt-1 text-[13px] text-muted">
                 {selected.status === "overdue"
-                  ? `Missed by ${Math.abs(selected.daysToDue)} days — file as soon as possible to limit late fees and interest.`
+                  ? `Missed by ${Math.abs(selected.daysToDue)} days. File as soon as possible to limit late fees and interest.`
                   : selected.status === "due-soon"
-                    ? `Due ${dueLabel(selected.daysToDue)} — file before the deadline.`
+                    ? `Due ${dueLabel(selected.daysToDue)}. File before the deadline.`
                     : selected.status === "filed" && !selected.hasEvidence
-                      ? "Filed, but no ARN/challan reference is stored — an audit gap. Add the proof reference."
+                      ? "Filed, but no ARN or challan reference is stored, which leaves an audit gap. Add the proof reference."
                       : selected.status === "filed"
                         ? "Filed and a proof reference is on record."
-                        : `Upcoming — due ${dueLabel(selected.daysToDue)}.`}
+                        : `Upcoming, due ${dueLabel(selected.daysToDue)}.`}
               </p>
             </div>
 

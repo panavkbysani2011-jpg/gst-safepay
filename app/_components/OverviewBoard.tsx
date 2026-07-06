@@ -75,7 +75,7 @@ function CompositionBar({ model }: { model: OverviewModel }) {
         </>
       ) : (
         <p className="mt-1 text-sm text-muted">
-          Nothing at risk right now — every deadline is either met or comfortably ahead.
+          Nothing at risk right now. Every deadline is either met or comfortably ahead.
         </p>
       )}
     </section>

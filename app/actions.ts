@@ -43,7 +43,7 @@ async function uploadRateLimited(userId: string): Promise<UploadResult | null> {
   if (limited.ok) return null;
   return {
     ok: false,
-    message: `Too many uploads — try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
+    message: `Too many uploads. Try again in ${retryPhrase(limited.retryAfterSeconds)}.`,
     inserted: 0,
     errors: [],
   };
@@ -111,7 +111,7 @@ export async function uploadBillsCsv(
     if (!knownVendorIds.has(b.vendorId)) {
       allErrors.push({
         row: 0,
-        message: `bill ${b.id}: unknown vendorId "${b.vendorId}" — upload that vendor first`,
+        message: `bill ${b.id}: unknown vendorId "${b.vendorId}". Upload that vendor first`,
       });
       continue;
     }

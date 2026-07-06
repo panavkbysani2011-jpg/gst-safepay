@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDoc, LegalSection } from "../../_components/LegalDoc";
 
-export const metadata: Metadata = { title: "Privacy Policy — GST SafePay" };
+export const metadata: Metadata = { title: "Privacy Policy · GST SafePay" };
 
 export default function PrivacyPage() {
   return (
@@ -12,9 +12,9 @@ export default function PrivacyPage() {
     >
       <LegalSection heading="What we collect">
         <ul>
-          <li><strong>Account data</strong> — the email address you sign up with, and authentication metadata handled by our auth provider.</li>
-          <li><strong>Business data you upload</strong> — the vendor, bill, GST invoice, reverse-charge and compliance records in the CSV files you import. This may include supplier names, GSTINs and amounts.</li>
-          <li><strong>Basic technical logs</strong> — standard server logs needed to operate and secure the service.</li>
+          <li><strong>Account data:</strong> the email address you sign up with, plus the authentication details handled by our auth provider.</li>
+          <li><strong>Business data you upload:</strong> the vendor, bill, GST invoice, reverse-charge and compliance records in the CSV files you import. This can include supplier names, GSTINs and amounts.</li>
+          <li><strong>Basic technical logs:</strong> the standard server logs we need to run and secure the service.</li>
         </ul>
       </LegalSection>
 
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection heading="Where it is stored">
-        <p>Data is held in a managed PostgreSQL database (Supabase, hosted in the Asia-Pacific region) and is logically scoped to your account — each account can only read its own records. Access is protected by authentication on every request.</p>
+        <p>Data is held in a managed PostgreSQL database (Supabase, hosted in the Asia-Pacific region) and is logically scoped to your account, so each account can only read its own records. Access is protected by authentication on every request.</p>
       </LegalSection>
 
       <LegalSection heading="Your rights">

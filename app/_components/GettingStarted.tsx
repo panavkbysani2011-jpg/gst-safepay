@@ -133,7 +133,7 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
           <div className="min-w-0">
             <h2 className="font-display text-lg font-semibold text-fg">Get set up in 3 steps</h2>
             <p className="mt-0.5 text-[13px] leading-relaxed text-muted">
-              GST SafePay catches money lost to three timing traps — MSME 45-day
+              GST SafePay catches money lost to three timing traps: MSME 45-day
               payments, GST IMS deemed-accept, and reverse charge. Add your data to
               see your exposure.
             </p>
@@ -195,7 +195,7 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
             Import my data
           </Link>
           <span className="ml-auto text-[11.5px] text-faint">
-            Demo data is synthetic — safe to explore.
+            Demo data is synthetic, so it's safe to explore.
           </span>
         </div>
       </div>

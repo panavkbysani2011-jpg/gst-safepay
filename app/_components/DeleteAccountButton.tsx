@@ -35,7 +35,7 @@ export function DeleteAccountButton() {
   return (
     <form action={deleteAccount} className="flex flex-col gap-3">
       <p className="text-[13px] leading-relaxed text-danger">
-        This permanently deletes your account and <strong>all</strong> your data —
+        This permanently deletes your account and <strong>all</strong> your data:
         vendors, bills, GST/IMS records, reverse-charge purchases and compliance
         filings. It cannot be undone.
       </p>
