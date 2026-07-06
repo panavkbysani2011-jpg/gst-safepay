@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { saveThemePreference } from "@/app/theme-actions";
 import { ThemeToggle } from "./ThemeToggle";
 import {
   IMPORT_ITEM,
@@ -65,7 +66,7 @@ export function AppTopbar({ email, asOf }: { email: string; asOf: string }) {
           </svg>
           as of {asOf}
         </span>
-        <ThemeToggle />
+        <ThemeToggle onPersist={(t) => void saveThemePreference(t).catch(() => {})} />
         <span
           aria-hidden
           className="grid size-[30px] place-items-center rounded-lg border border-border bg-surface-2 text-xs font-semibold text-muted"

@@ -36,7 +36,9 @@ const OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export function ThemeToggle() {
+// `onPersist` is passed only in authenticated contexts (the app topbar) to save
+// the choice to the account; public pages render the toggle without it.
+export function ThemeToggle({ onPersist }: { onPersist?: (theme: Theme) => void }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export function ThemeToggle() {
       // localStorage unavailable (private mode) — theme still applies for this page.
     }
     setTheme(next);
+    onPersist?.(next);
   }
 
   return (

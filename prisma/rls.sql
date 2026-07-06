@@ -96,3 +96,14 @@ create policy "owner_all" on public."BusinessProfile"
   with check ((select auth.uid())::text = "ownerId");
 revoke all on public."BusinessProfile" from anon;
 revoke truncate on public."BusinessProfile" from authenticated;
+
+-- ── UserPreference ───────────────────────────────────────────────────────
+-- Per-owner UI preferences (colour theme) — same owner-only isolation.
+alter table public."UserPreference" enable row level security;
+drop policy if exists "owner_all" on public."UserPreference";
+create policy "owner_all" on public."UserPreference"
+  for all to authenticated
+  using ((select auth.uid())::text = "ownerId")
+  with check ((select auth.uid())::text = "ownerId");
+revoke all on public."UserPreference" from anon;
+revoke truncate on public."UserPreference" from authenticated;

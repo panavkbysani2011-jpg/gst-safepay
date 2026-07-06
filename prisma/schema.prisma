@@ -123,3 +123,11 @@ model BusinessProfile {
   gstin        String?
   updatedAt    DateTime @updatedAt
 }
+
+// Per-account UI preferences. Currently just the colour theme, so it can follow
+// the user across devices/browsers (localStorage only persists per browser).
+model UserPreference {
+  ownerId   String   @id
+  theme     String
+  updatedAt DateTime @updatedAt
+}
