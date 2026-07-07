@@ -324,3 +324,37 @@ describe("import hardening", () => {
     expect(result.errors[0].message).toMatch(/limit/i);
   });
 });
+
+// Real-world files rarely arrive clean. Excel's "Save as CSV UTF-8" adds a
+// leading BOM, uses CRLF line endings, and users leave stray spaces in cells.
+// These guard that the parser keeps tolerating all of that.
+describe("real-world file quirks", () => {
+  it("parses a header carrying a UTF-8 BOM (Excel export)", () => {
+    const csv = "﻿id,name,gstin\nv1,Acme Traders,29ABCDE1234F1Z5";
+    const result = parseVendorsCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(1);
+    expect(result.valid[0].id).toBe("v1");
+  });
+
+  it("parses CRLF (Windows) line endings", () => {
+    const csv = "id,name,gstin\r\nv1,Acme Traders,29ABCDE1234F1Z5\r\n";
+    const result = parseVendorsCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.valid).toHaveLength(1);
+  });
+
+  it("trims stray whitespace around header names and cell values", () => {
+    const csv = " id , name , gstin \n  v1  ,  Acme Traders  , 29ABCDE1234F1Z5 ";
+    const result = parseVendorsCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.valid[0]).toMatchObject({ id: "v1", name: "Acme Traders" });
+  });
+
+  it("handles the worst case together: BOM + CRLF + spacing", () => {
+    const csv = "﻿ id , name , gstin \r\n v1 , Acme , 29ABCDE1234F1Z5 \r\n";
+    const result = parseVendorsCsv(csv);
+    expect(result.errors).toEqual([]);
+    expect(result.valid[0].id).toBe("v1");
+  });
+});
