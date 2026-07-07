@@ -79,6 +79,11 @@ export function DetailDrawer({
         aria-modal="true"
         aria-labelledby="drawer-title"
         aria-hidden={!open}
+        // When closed the panel is only slid off-screen, so without `inert` its
+        // close button + links stay in the tab order and aria-hidden would wrap
+        // focusable nodes (an ARIA violation). `inert` removes the whole closed
+        // panel from focus + the accessibility tree.
+        inert={!open}
         className={`fixed top-0 right-0 z-40 flex h-full w-[472px] max-w-[92vw] flex-col border-l border-border bg-surface shadow-[var(--shadow-pop)] transition-transform duration-[260ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
