@@ -140,7 +140,14 @@ describe("buildOverview", () => {
     const o = buildOverview(
       makeData({
         vendorVerifications: [
-          { vendorName: "Gamma", gstin: "27AAPFU0939F1ZA", assessment: invalid },
+          {
+            vendorName: "Gamma",
+            gstin: "27AAPFU0939F1ZA",
+            assessment: invalid,
+            gstinActive: true,
+            udyamRegistered: false,
+            udyamCategory: null,
+          },
         ],
         totalVendors: 1,
       })

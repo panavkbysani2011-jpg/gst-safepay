@@ -26,6 +26,10 @@ export interface VendorVerificationRow {
   vendorName: string;
   gstin: string;
   assessment: VendorVerificationAssessment;
+  // Raw editable fields, so the in-app edit form can prefill without a round-trip.
+  gstinActive: boolean;
+  udyamRegistered: boolean;
+  udyamCategory: UdyamCategory | null;
 }
 
 export type RankedRisk = PaymentRiskAssessment & {
@@ -168,6 +172,9 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
       vendorName: v.name,
       gstin: v.gstin,
       assessment: assessVendorVerification(v, asOf, ruleConfig.vendor),
+      gstinActive: v.gstinActive,
+      udyamRegistered: v.udyamRegistered,
+      udyamCategory: v.udyamCategory,
     })
   );
   const vendorVerificationSummary = summarizeVendorVerification(
