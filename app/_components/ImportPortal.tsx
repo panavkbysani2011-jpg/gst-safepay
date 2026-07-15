@@ -34,6 +34,7 @@ import {
   checkVendorsHealth,
   type HealthWarning,
 } from "@/lib/csv/dataHealth";
+import { fileToCsv } from "@/lib/csv/toCsv";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -367,8 +368,14 @@ function UploadCard({ card }: { card: CardConfig }) {
     setFileName(file.name);
     setSubmittedName(null); // invalidate any previous result
     try {
-      const text = await file.text();
-      setPreview(card.parse(text));
+      // Same normalizer the server uses — CSV/TSV/Excel/ODS all become the CSV
+      // text the parsers expect, so the preview matches exactly what will save.
+      const read = await fileToCsv(file);
+      if (!read.ok) {
+        setPreview({ valid: [], errors: [{ row: 0, message: read.message }] });
+        return;
+      }
+      setPreview(card.parse(read.csv));
     } catch {
       setPreview({ valid: [], errors: [{ row: 0, message: "Could not read this file." }] });
     }
@@ -422,7 +429,7 @@ function UploadCard({ card }: { card: CardConfig }) {
         id={inputId}
         type="file"
         name="file"
-        accept=".csv,text/csv"
+        accept=".csv,.tsv,.xlsx,.xls,.ods,text/csv,text/tab-separated-values,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet"
         required
         onChange={(e) => acceptFile(e.target.files?.[0])}
         className="sr-only"
@@ -459,8 +466,8 @@ function UploadCard({ card }: { card: CardConfig }) {
             <path d="M12 16V4m0 0L8 8m4-4 4 4" />
             <path d="M4 20h16" />
           </svg>
-          <span className="text-[13px] font-medium text-fg">Drop your CSV here, or click to browse</span>
-          <span className="text-[11px] text-faint">.csv only · you&apos;ll preview it before anything is saved</span>
+          <span className="text-[13px] font-medium text-fg">Drop your file here, or click to browse</span>
+          <span className="text-[11px] text-faint">CSV or Excel (.csv, .xlsx, .xls, .ods) · you&apos;ll preview it before anything is saved</span>
         </label>
       )}
     </form>
