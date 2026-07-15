@@ -1,7 +1,10 @@
 // GST SafePay — data model.
-// Money is stored as Float (rupees) for the prototype; switch to integer paise
-// or Decimal before handling real money. Dates are ISO "YYYY-MM-DD" strings to
-// match the deterministic rule engine in lib/rules.
+// Money is stored as Decimal(14,2) rupees — exact to the paise, no float drift.
+// The rule engines still compute in JS numbers (derived interest/deduction are
+// approximations that get rounded for display); the stored source-of-truth
+// amounts are exact. Prisma returns these columns as Decimal, converted to
+// number at the data-read boundary (lib/data/dashboard.ts, the export route).
+// Dates are ISO "YYYY-MM-DD" strings to match the deterministic rule engine.
 // Multi-tenant: every row is scoped by ownerId (the Supabase auth user id).
 // Composite primary key (ownerId, id) isolates each account's data and lets two
 // accounts each use the same business id (e.g. "v1") without colliding.
@@ -37,7 +40,7 @@ model Bill {
   vendor                Vendor   @relation(fields: [ownerId, vendorId], references: [ownerId, id], onDelete: Cascade)
   vendorId              String
   invoiceAcceptanceDate String // ISO date
-  amount                Float
+  amount                Decimal  @db.Decimal(14, 2) // rupees, exact to the paise
   hasWrittenAgreement   Boolean  @default(true)
   agreedPaymentDays     Int?
   paidDate              String? // ISO date or null
@@ -56,8 +59,8 @@ model ImsInvoice {
   vendorName   String
   invoiceNo    String
   taxPeriod    String // "YYYY-MM"
-  taxableValue Float
-  gstAmount    Float
+  taxableValue Decimal @db.Decimal(14, 2) // rupees, exact to the paise
+  gstAmount    Decimal @db.Decimal(14, 2) // rupees, exact to the paise
   imsAction    String // "accept" | "reject" | "pending" | "none"
   eligibility  String // "eligible" | "ineligible" | "unsure"
   createdAt    DateTime @default(now())
@@ -75,7 +78,7 @@ model RcmPurchase {
   supplierUnregistered Boolean
   supplyType           String // "goods" | "services"
   supplyDate           String // ISO date
-  rcmTaxAmount         Float
+  rcmTaxAmount         Decimal  @db.Decimal(14, 2) // rupees, exact to the paise
   selfInvoiceIssued    Boolean  @default(false)
   rcmTaxPaidDate       String? // ISO date or null
   createdAt            DateTime @default(now())

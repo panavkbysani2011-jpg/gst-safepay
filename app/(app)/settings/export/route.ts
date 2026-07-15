@@ -25,6 +25,19 @@ export async function GET() {
     db.businessProfile.findUnique({ where: { ownerId: user.id } }),
   ]);
 
+  // Money columns are Prisma Decimal; export them as JSON numbers (not the
+  // Decimal object's string form) so the download keeps a stable numeric shape.
+  const billsOut = bills.map((b) => ({ ...b, amount: b.amount.toNumber() }));
+  const imsOut = imsInvoices.map((i) => ({
+    ...i,
+    taxableValue: i.taxableValue.toNumber(),
+    gstAmount: i.gstAmount.toNumber(),
+  }));
+  const rcmOut = rcmPurchases.map((p) => ({
+    ...p,
+    rcmTaxAmount: p.rcmTaxAmount.toNumber(),
+  }));
+
   const payload = {
     exportedAt: new Date().toISOString(),
     account: { id: user.id, email: user.email ?? null },
@@ -39,9 +52,9 @@ export async function GET() {
     },
     data: {
       vendors,
-      bills,
-      imsInvoices,
-      rcmPurchases,
+      bills: billsOut,
+      imsInvoices: imsOut,
+      rcmPurchases: rcmOut,
       complianceDeadlines,
       ruleConfig,
       businessProfile,
