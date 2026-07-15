@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { PrismaPromise } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryPhrase } from "@/lib/rate-limit";
@@ -11,6 +12,7 @@ import {
   parseRcmCsv,
   parseVendorsCsv,
 } from "@/lib/csv/parseCsv";
+import { fileToCsv } from "@/lib/csv/toCsv";
 import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
 import { DEMO_IMS_ROWS } from "@/lib/rules/imsFixtures";
 import { DEMO_RCM_ROWS } from "@/lib/rules/rcmFixtures";
@@ -30,10 +32,31 @@ const EMPTY_FILE_RESULT: UploadResult = {
   errors: [],
 };
 
-async function readUploadedFile(formData: FormData): Promise<string | null> {
+function fileErrorResult(message: string): UploadResult {
+  return { ok: false, message, inserted: 0, errors: [] };
+}
+
+// Reads the upload and normalizes it to CSV text (CSV/TSV/Excel/ODS), enforcing
+// the size cap and format allowlist. Returns null only when no file was sent.
+async function readUploadedFile(
+  formData: FormData
+): Promise<{ ok: true; csv: string } | { ok: false; message: string } | null> {
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return null;
-  return file.text();
+  return fileToCsv(file);
+}
+
+// Writes rows in transactional batches instead of one round-trip per row, so a
+// full 5000-row import is a handful of round-trips, not thousands (which would
+// blow the serverless time limit). Upsert semantics are unchanged.
+const DB_BATCH_SIZE = 100;
+
+async function writeInBatches(
+  operations: PrismaPromise<unknown>[]
+): Promise<void> {
+  for (let i = 0; i < operations.length; i += DB_BATCH_SIZE) {
+    await db.$transaction(operations.slice(i, i + DB_BATCH_SIZE));
+  }
 }
 
 // Per-user upload throttle — uploads write to the DB, so cap abuse/DoS while
@@ -56,23 +79,26 @@ export async function uploadVendorsCsv(
   const user = await requireUser();
   const limited = await uploadRateLimited(user.id);
   if (limited) return limited;
-  const text = await readUploadedFile(formData);
-  if (text === null) return EMPTY_FILE_RESULT;
+  const read = await readUploadedFile(formData);
+  if (read === null) return EMPTY_FILE_RESULT;
+  if (!read.ok) return fileErrorResult(read.message);
 
-  const { valid, errors } = parseVendorsCsv(text);
-  for (const v of valid) {
-    await db.vendor.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: v.id } },
-      create: { ...v, ownerId: user.id },
-      update: {
-        name: v.name,
-        gstin: v.gstin,
-        gstinActive: v.gstinActive,
-        udyamRegistered: v.udyamRegistered,
-        udyamCategory: v.udyamCategory,
-      },
-    });
-  }
+  const { valid, errors } = parseVendorsCsv(read.csv);
+  await writeInBatches(
+    valid.map((v) =>
+      db.vendor.upsert({
+        where: { ownerId_id: { ownerId: user.id, id: v.id } },
+        create: { ...v, ownerId: user.id },
+        update: {
+          name: v.name,
+          gstin: v.gstin,
+          gstinActive: v.gstinActive,
+          udyamRegistered: v.udyamRegistered,
+          udyamCategory: v.udyamCategory,
+        },
+      })
+    )
+  );
 
   revalidatePath("/", "layout");
   return {
@@ -92,10 +118,11 @@ export async function uploadBillsCsv(
   const user = await requireUser();
   const limited = await uploadRateLimited(user.id);
   if (limited) return limited;
-  const text = await readUploadedFile(formData);
-  if (text === null) return EMPTY_FILE_RESULT;
+  const read = await readUploadedFile(formData);
+  if (read === null) return EMPTY_FILE_RESULT;
+  if (!read.ok) return fileErrorResult(read.message);
 
-  const { valid, errors } = parseBillsCsv(text);
+  const { valid, errors } = parseBillsCsv(read.csv);
   const knownVendorIds = new Set(
     (
       await db.vendor.findMany({
@@ -105,30 +132,34 @@ export async function uploadBillsCsv(
     ).map((v) => v.id)
   );
 
-  let inserted = 0;
   const allErrors = [...errors];
-  for (const b of valid) {
-    if (!knownVendorIds.has(b.vendorId)) {
-      allErrors.push({
-        row: 0,
-        message: `bill ${b.id}: unknown vendorId "${b.vendorId}". Upload that vendor first`,
-      });
-      continue;
-    }
-    await db.bill.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: b.id } },
-      create: { ...b, ownerId: user.id },
-      update: {
-        vendorId: b.vendorId,
-        invoiceAcceptanceDate: b.invoiceAcceptanceDate,
-        amount: b.amount,
-        hasWrittenAgreement: b.hasWrittenAgreement,
-        agreedPaymentDays: b.agreedPaymentDays,
-        paidDate: b.paidDate,
-      },
+  // A bill's vendorId must exist — skip (and explain) orphans before writing.
+  const writable = valid.filter((b) => {
+    if (knownVendorIds.has(b.vendorId)) return true;
+    allErrors.push({
+      row: 0,
+      message: `bill ${b.id}: unknown vendorId "${b.vendorId}". Upload that vendor first`,
     });
-    inserted += 1;
-  }
+    return false;
+  });
+
+  await writeInBatches(
+    writable.map((b) =>
+      db.bill.upsert({
+        where: { ownerId_id: { ownerId: user.id, id: b.id } },
+        create: { ...b, ownerId: user.id },
+        update: {
+          vendorId: b.vendorId,
+          invoiceAcceptanceDate: b.invoiceAcceptanceDate,
+          amount: b.amount,
+          hasWrittenAgreement: b.hasWrittenAgreement,
+          agreedPaymentDays: b.agreedPaymentDays,
+          paidDate: b.paidDate,
+        },
+      })
+    )
+  );
+  const inserted = writable.length;
 
   revalidatePath("/", "layout");
   return {
@@ -148,26 +179,29 @@ export async function uploadImsCsv(
   const user = await requireUser();
   const limited = await uploadRateLimited(user.id);
   if (limited) return limited;
-  const text = await readUploadedFile(formData);
-  if (text === null) return EMPTY_FILE_RESULT;
+  const read = await readUploadedFile(formData);
+  if (read === null) return EMPTY_FILE_RESULT;
+  if (!read.ok) return fileErrorResult(read.message);
 
-  const { valid, errors } = parseImsCsv(text);
-  for (const inv of valid) {
-    await db.imsInvoice.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: inv.id } },
-      create: { ...inv, ownerId: user.id },
-      update: {
-        vendorId: inv.vendorId,
-        vendorName: inv.vendorName,
-        invoiceNo: inv.invoiceNo,
-        taxPeriod: inv.taxPeriod,
-        taxableValue: inv.taxableValue,
-        gstAmount: inv.gstAmount,
-        imsAction: inv.imsAction,
-        eligibility: inv.eligibility,
-      },
-    });
-  }
+  const { valid, errors } = parseImsCsv(read.csv);
+  await writeInBatches(
+    valid.map((inv) =>
+      db.imsInvoice.upsert({
+        where: { ownerId_id: { ownerId: user.id, id: inv.id } },
+        create: { ...inv, ownerId: user.id },
+        update: {
+          vendorId: inv.vendorId,
+          vendorName: inv.vendorName,
+          invoiceNo: inv.invoiceNo,
+          taxPeriod: inv.taxPeriod,
+          taxableValue: inv.taxableValue,
+          gstAmount: inv.gstAmount,
+          imsAction: inv.imsAction,
+          eligibility: inv.eligibility,
+        },
+      })
+    )
+  );
 
   revalidatePath("/", "layout");
   return {
@@ -187,26 +221,29 @@ export async function uploadRcmCsv(
   const user = await requireUser();
   const limited = await uploadRateLimited(user.id);
   if (limited) return limited;
-  const text = await readUploadedFile(formData);
-  if (text === null) return EMPTY_FILE_RESULT;
+  const read = await readUploadedFile(formData);
+  if (read === null) return EMPTY_FILE_RESULT;
+  if (!read.ok) return fileErrorResult(read.message);
 
-  const { valid, errors } = parseRcmCsv(text);
-  for (const p of valid) {
-    await db.rcmPurchase.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: p.id } },
-      create: { ...p, ownerId: user.id },
-      update: {
-        vendorId: p.vendorId,
-        vendorName: p.vendorName,
-        supplierUnregistered: p.supplierUnregistered,
-        supplyType: p.supplyType,
-        supplyDate: p.supplyDate,
-        rcmTaxAmount: p.rcmTaxAmount,
-        selfInvoiceIssued: p.selfInvoiceIssued,
-        rcmTaxPaidDate: p.rcmTaxPaidDate,
-      },
-    });
-  }
+  const { valid, errors } = parseRcmCsv(read.csv);
+  await writeInBatches(
+    valid.map((p) =>
+      db.rcmPurchase.upsert({
+        where: { ownerId_id: { ownerId: user.id, id: p.id } },
+        create: { ...p, ownerId: user.id },
+        update: {
+          vendorId: p.vendorId,
+          vendorName: p.vendorName,
+          supplierUnregistered: p.supplierUnregistered,
+          supplyType: p.supplyType,
+          supplyDate: p.supplyDate,
+          rcmTaxAmount: p.rcmTaxAmount,
+          selfInvoiceIssued: p.selfInvoiceIssued,
+          rcmTaxPaidDate: p.rcmTaxPaidDate,
+        },
+      })
+    )
+  );
 
   revalidatePath("/", "layout");
   return {
@@ -226,24 +263,27 @@ export async function uploadComplianceCsv(
   const user = await requireUser();
   const limited = await uploadRateLimited(user.id);
   if (limited) return limited;
-  const text = await readUploadedFile(formData);
-  if (text === null) return EMPTY_FILE_RESULT;
+  const read = await readUploadedFile(formData);
+  if (read === null) return EMPTY_FILE_RESULT;
+  if (!read.ok) return fileErrorResult(read.message);
 
-  const { valid, errors } = parseComplianceCsv(text);
-  for (const d of valid) {
-    await db.complianceDeadline.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: d.id } },
-      create: { ...d, ownerId: user.id },
-      update: {
-        name: d.name,
-        authority: d.authority,
-        period: d.period,
-        dueDate: d.dueDate,
-        filedDate: d.filedDate,
-        proofRef: d.proofRef,
-      },
-    });
-  }
+  const { valid, errors } = parseComplianceCsv(read.csv);
+  await writeInBatches(
+    valid.map((d) =>
+      db.complianceDeadline.upsert({
+        where: { ownerId_id: { ownerId: user.id, id: d.id } },
+        create: { ...d, ownerId: user.id },
+        update: {
+          name: d.name,
+          authority: d.authority,
+          period: d.period,
+          dueDate: d.dueDate,
+          filedDate: d.filedDate,
+          proofRef: d.proofRef,
+        },
+      })
+    )
+  );
 
   revalidatePath("/", "layout");
   return {

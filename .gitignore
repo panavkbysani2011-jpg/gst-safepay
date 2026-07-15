@@ -49,3 +49,7 @@ next-env.d.ts
 # local SQLite database (dev only; production uses a cloud Postgres)
 prisma/*.db
 prisma/*.db-journal
+
+# graphify knowledge-graph output (local artifact) and dev launch config
+graphify-out/
+.claude/
