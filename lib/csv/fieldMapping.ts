@@ -232,3 +232,73 @@ export function toBooleanLoose(value: unknown): boolean | null {
   if (FALSE_WORDS.has(s)) return false;
   return null;
 }
+
+// --- Applying a mapping ----------------------------------------------------
+// Once the user has confirmed a mapping, transform their raw rows into the app's
+// canonical shape. A valid value is normalized to its canonical form; an
+// unparseable one is passed through as-is so the existing zod validator reports
+// it (we never silently blank or fabricate a value).
+
+function normalizeCell(value: unknown, type: FieldType): string {
+  const s = value === null || value === undefined ? "" : String(value).trim();
+  if (s === "") return "";
+  switch (type) {
+    case "date":
+      return toIsoDate(s) ?? s;
+    case "number": {
+      const n = toNumberLoose(s);
+      return n === null ? s : String(n);
+    }
+    case "boolean": {
+      const b = toBooleanLoose(s);
+      return b === null ? s : b ? "true" : "false";
+    }
+    case "enum":
+      return s.toLowerCase();
+    default:
+      return s;
+  }
+}
+
+/**
+ * Transform raw rows (keyed by the file's own headers) into canonical rows
+ * (keyed by the app's field keys), applying per-field normalization. Unmapped
+ * fields become empty — the downstream validator applies its own defaults.
+ */
+export function applyMapping(
+  rawRows: Record<string, unknown>[],
+  mapping: Record<string, string | null>,
+  fields: TargetField[]
+): Record<string, string>[] {
+  return rawRows.map((row) => {
+    const out: Record<string, string> = {};
+    for (const f of fields) {
+      const sourceHeader = mapping[f.key];
+      const raw = sourceHeader ? row[sourceHeader] : "";
+      out[f.key] = normalizeCell(raw, f.type);
+    }
+    return out;
+  });
+}
+
+function csvEscape(value: string): string {
+  return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/**
+ * Serialize canonical rows to a CSV string whose header row is the app's field
+ * keys — exactly what the existing parseXCsv validators expect. This lets the
+ * whole flexible-import path reuse the current validation + server pipeline
+ * unchanged: the canonical CSV is submitted in place of the raw file.
+ */
+export function toCanonicalCsv(
+  rows: Record<string, string>[],
+  fields: TargetField[]
+): string {
+  const header = fields.map((f) => f.key);
+  const lines = [header.join(",")];
+  for (const row of rows) {
+    lines.push(header.map((k) => csvEscape(row[k] ?? "")).join(","));
+  }
+  return lines.join("\n");
+}
