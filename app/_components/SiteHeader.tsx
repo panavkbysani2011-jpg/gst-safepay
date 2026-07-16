@@ -23,12 +23,12 @@ export function SiteHeader() {
         </Link>
 
         <nav aria-label="Marketing" className="ml-auto hidden items-center gap-6 md:flex">
-          <a href="/#how" className="text-[13.5px] font-medium text-muted transition-colors hover:text-fg">
+          <Link href="/#how" className="text-[13.5px] font-medium text-muted transition-colors hover:text-fg">
             How it works
-          </a>
-          <a href="/#modules" className="text-[13.5px] font-medium text-muted transition-colors hover:text-fg">
+          </Link>
+          <Link href="/#modules" className="text-[13.5px] font-medium text-muted transition-colors hover:text-fg">
             What it catches
-          </a>
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-2.5 md:ml-6">

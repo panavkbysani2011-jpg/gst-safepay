@@ -39,8 +39,10 @@ const OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
+  // Read the initial theme from the DOM on mount (triggers mount animation)
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(current === "dark" || current === "paper" ? current : "light");
   }, []);
 

@@ -46,15 +46,6 @@ const SELF_INVOICE: Record<RcmSelfInvoiceStatus, { label: string; tone: Tone }> 
   overdue: { label: "Self-inv overdue", tone: "danger" },
 };
 
-function daysLabel(fromToday: number): string {
-  if (fromToday < 0) {
-    const n = Math.abs(fromToday);
-    return `${n} ${n === 1 ? "day" : "days"} overdue`;
-  }
-  if (fromToday === 0) return "due today";
-  return `in ${fromToday} ${fromToday === 1 ? "day" : "days"}`;
-}
-
 function Chip({ tone, children }: { tone: Tone; children: React.ReactNode }) {
   return (
     <span

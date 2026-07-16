@@ -87,7 +87,8 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
   const [seedPending, startSeed] = useTransition();
   const [dismissPending, startDismiss] = useTransition();
 
-  useEffect(() => setMounted(true), []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setMounted(true); }, []);
 
   const busy = seedPending || dismissPending || leaving;
   const fraction = state.total > 0 ? state.completedCount / state.total : 0;
@@ -195,7 +196,7 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
             Import my data
           </Link>
           <span className="ml-auto text-[11.5px] text-faint">
-            Demo data is synthetic, so it's safe to explore.
+            Demo data is synthetic, so it&apos;s safe to explore.
           </span>
         </div>
       </div>
