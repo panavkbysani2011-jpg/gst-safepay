@@ -17,7 +17,7 @@ export function SiteHeader() {
           <span className="font-display text-[16px] font-semibold tracking-tight text-fg">
             GST SafePay
           </span>
-          <span className="rounded-[5px] border border-border px-1.5 py-px text-[9.5px] font-medium tracking-[0.14em] text-faint uppercase">
+          <span className="rounded-[5px] border border-border px-1.5 py-px text-[9.5px] font-medium tracking-[0.14em] text-muted uppercase">
             Beta
           </span>
         </Link>

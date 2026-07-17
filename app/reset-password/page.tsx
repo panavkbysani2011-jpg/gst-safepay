@@ -73,7 +73,7 @@ export default async function ResetPasswordPage({
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="At least 6 characters"
-                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-muted transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               />
             </label>
             <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
@@ -85,7 +85,7 @@ export default async function ResetPasswordPage({
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="Re-enter your new password"
-                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-muted transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               />
             </label>
 

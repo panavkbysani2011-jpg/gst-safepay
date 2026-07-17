@@ -25,12 +25,12 @@ export function AppSidebar({ email }: { email: string }) {
         <span className="font-display text-[15px] font-semibold tracking-tight text-fg">
           GST SafePay
         </span>
-        <span className="rounded-[5px] border border-border px-1.5 py-px text-[9.5px] font-medium tracking-[0.14em] text-faint uppercase">
+        <span className="rounded-[5px] border border-border px-1.5 py-px text-[9.5px] font-medium tracking-[0.14em] text-muted uppercase">
           Beta
         </span>
       </div>
 
-      <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold tracking-[0.13em] text-faint uppercase">
+      <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold tracking-[0.13em] text-muted uppercase">
         Cockpit
       </p>
       <nav aria-label="Main" className="flex flex-col gap-0.5">

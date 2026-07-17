@@ -69,7 +69,7 @@ function FileBadge() {
 function EvidenceCell({ row }: { row: ComplianceRowView }) {
   const primary =
     row.status !== "filed" ? (
-      <span className="text-[12px] text-faint">not filed</span>
+      <span className="text-[12px] text-muted">not filed</span>
     ) : row.hasEvidence ? (
       <span className="tnum font-mono text-[12px] text-success">{row.proofRef}</span>
     ) : (
@@ -121,17 +121,17 @@ export function ComplianceTable({
         <h2 className="font-display text-[15px] font-semibold text-fg">
           Compliance calendar & evidence
         </h2>
-        <span className="text-xs text-faint">filing deadlines with proof-of-filing</span>
+        <span className="text-xs text-muted">filing deadlines with proof-of-filing</span>
         <div className="ml-auto flex items-center gap-3 text-[11.5px]">
           <span>
             <span className="tnum font-mono font-semibold text-danger">{summary.overdueCount}</span>{" "}
-            <span className="text-faint">overdue</span>
+            <span className="text-muted">overdue</span>
           </span>
           <span>
             <span className="tnum font-mono font-semibold text-warning">
               {summary.evidenceGapCount}
             </span>{" "}
-            <span className="text-faint">
+            <span className="text-muted">
               {summary.evidenceGapCount === 1 ? "evidence gap" : "evidence gaps"}
             </span>
           </span>
@@ -165,7 +165,7 @@ export function ComplianceTable({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <span className="text-[13.5px] font-semibold text-fg">{r.name}</span>
-                      <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-faint uppercase">
+                      <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-muted uppercase">
                         {r.authority}
                       </span>
                     </div>
@@ -174,7 +174,7 @@ export function ComplianceTable({
                   <td className="px-4 py-3">
                     <div className="text-[13px] text-fg">{formatDate(r.dueDate)}</div>
                     {r.status !== "filed" && (
-                      <div className="text-[11.5px] text-faint">{dueLabel(r.daysToDue)}</div>
+                      <div className="text-[11.5px] text-muted">{dueLabel(r.daysToDue)}</div>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -268,7 +268,7 @@ export function ComplianceTable({
                     </span>
                     <span className="min-w-0">
                       <span className="text-[13px] font-semibold text-fg">{s.label}</span>
-                      <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">{s.basis}</span>
+                      <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">{s.basis}</span>
                     </span>
                     <span className="tnum ml-auto shrink-0 pl-2 text-right font-mono text-[13px] font-semibold text-fg">
                       {s.value}

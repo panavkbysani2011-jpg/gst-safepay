@@ -147,10 +147,10 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
         <h2 className="font-display text-[15px] font-semibold text-fg">
           Reverse-charge watch
         </h2>
-        <span className="text-xs text-faint">self-invoice (Rule 47A) & cash-GST deadlines</span>
+        <span className="text-xs text-muted">self-invoice (Rule 47A) & cash-GST deadlines</span>
         <div className="ml-auto flex items-center gap-2 text-[11.5px]">
           <span className="tnum font-mono font-semibold text-danger">{formatINR(exposure)}</span>
-          <span className="text-faint">interest + penalty exposure</span>
+          <span className="text-muted">interest + penalty exposure</span>
         </div>
       </div>
 
@@ -183,7 +183,7 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
                   <td className="px-4 py-3 text-[13.5px] font-semibold text-fg">{r.vendorName}</td>
                   <td className="px-4 py-3">
                     <div className="text-[13px] text-fg capitalize">{r.supplyType}</div>
-                    <div className="text-[11.5px] text-faint">{formatDate(r.supplyDate)}</div>
+                    <div className="text-[11.5px] text-muted">{formatDate(r.supplyDate)}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-[13px] text-fg">{formatDate(r.rcmPaymentDueDate)}</div>
@@ -359,7 +359,7 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
                     </span>
                     <span className="min-w-0">
                       <span className="text-[13px] font-semibold text-fg">{s.label}</span>
-                      <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">{s.basis}</span>
+                      <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">{s.basis}</span>
                     </span>
                     <span
                       className={`tnum ml-auto shrink-0 pl-2 text-right font-mono text-[13.5px] font-semibold ${

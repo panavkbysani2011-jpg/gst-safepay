@@ -93,7 +93,7 @@ function QueueRow({ item }: { item: NeedsActionItem }) {
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-2">
             <span className="truncate text-[13.5px] font-semibold text-fg">{item.title}</span>
-            <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-faint uppercase">
+            <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-muted uppercase">
               {item.module}
             </span>
           </span>
@@ -123,7 +123,7 @@ export function OverviewBoard({ model }: { model: OverviewModel }) {
       <section className="animate-rise overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
         <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
           <h2 className="font-display text-[15px] font-semibold text-fg">Needs action</h2>
-          <span className="text-xs text-faint">
+          <span className="text-xs text-muted">
             {model.needsAction.length > 0
               ? "most urgent across every module"
               : "you're all caught up"}
@@ -136,7 +136,7 @@ export function OverviewBoard({ model }: { model: OverviewModel }) {
               <QueueRow key={item.id} item={item} />
             ))}
             {extra > 0 && (
-              <li className="px-4 py-2.5 text-center text-[12px] text-faint">
+              <li className="px-4 py-2.5 text-center text-[12px] text-muted">
                 +{extra} more across your modules
               </li>
             )}

@@ -100,7 +100,7 @@ export function ImsTable({
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-5 py-3.5">
         <h2 className="font-display text-[15px] font-semibold text-fg">GST IMS monthly close</h2>
-        <span className="text-xs text-faint">
+        <span className="text-xs text-muted">
           {summary.nextCutoffDate
             ? `next GSTR-2B cutoff ${formatDate(summary.nextCutoffDate)}`
             : "no open cutoff"}
@@ -109,7 +109,7 @@ export function ImsTable({
           <span className="tnum font-mono font-semibold text-warning">
             {formatINR(summary.totalItcAtRisk)}
           </span>
-          <span className="text-faint">ITC at risk</span>
+          <span className="text-muted">ITC at risk</span>
         </div>
       </div>
 
@@ -147,11 +147,11 @@ export function ImsTable({
                   <td className="px-4 py-3 text-[13.5px] font-semibold text-fg">{r.vendorName}</td>
                   <td className="px-4 py-3">
                     <div className="font-mono text-[12.5px] text-fg">{r.invoiceNo}</div>
-                    <div className="text-[11.5px] text-faint">{r.taxPeriod}</div>
+                    <div className="text-[11.5px] text-muted">{r.taxPeriod}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="text-[13px] text-fg">{formatDate(r.cutoffDate)}</div>
-                    <div className="text-[11.5px] text-faint">{cutoffLabel(r.daysToCutoff)}</div>
+                    <div className="text-[11.5px] text-muted">{cutoffLabel(r.daysToCutoff)}</div>
                   </td>
                   <td className="px-4 py-3">
                     <Chip tone={tone}>{STATUS_LABEL[r.status]}</Chip>
@@ -325,7 +325,7 @@ export function ImsTable({
                     </span>
                     <span className="min-w-0">
                       <span className="text-[13px] font-semibold text-fg">{s.label}</span>
-                      <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">{s.basis}</span>
+                      <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">{s.basis}</span>
                     </span>
                     <span className={`tnum ml-auto shrink-0 pl-2 text-right font-mono text-[13.5px] font-semibold ${"add" in s && s.add ? "text-danger" : "text-fg"}`}>
                       {s.value}

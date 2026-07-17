@@ -23,7 +23,7 @@ export default async function SettingsPage() {
           <dt className="text-[13px] text-muted">Signed in as</dt>
           <dd className="text-[13.5px] font-medium text-fg">{user.email ?? "—"}</dd>
         </dl>
-        <p className="mt-3 text-[12.5px] text-faint">
+        <p className="mt-3 text-[12.5px] text-muted">
           Switch the colour theme any time from the toggle in the top bar.
         </p>
       </section>
@@ -69,7 +69,7 @@ export default async function SettingsPage() {
           </svg>
           Export my data
         </a>
-        <p className="mt-4 border-t border-border pt-4 text-[12.5px] text-faint">
+        <p className="mt-4 border-t border-border pt-4 text-[12.5px] text-muted">
           Want to start over without deleting your account? Use{" "}
           <Link href="/import" className="font-medium text-accent-text hover:opacity-80">
             Import → Clear all my data

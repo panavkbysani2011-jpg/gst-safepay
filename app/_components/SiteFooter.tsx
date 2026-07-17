@@ -31,7 +31,7 @@ export function SiteFooter() {
           </div>
 
           <nav aria-label="Legal" className="flex flex-col gap-2.5">
-            <p className="text-[11px] font-semibold tracking-[0.12em] text-faint uppercase">Legal</p>
+            <p className="text-[11px] font-semibold tracking-[0.12em] text-muted uppercase">Legal</p>
             {LEGAL.map((l) => (
               <Link
                 key={l.href}
@@ -44,7 +44,7 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-[12px] text-faint sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-[12px] text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>
             In beta. Not tax advice. Tax-rule parameters must be verified by a
             chartered accountant before real use.

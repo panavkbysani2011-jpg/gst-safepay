@@ -20,7 +20,7 @@ const TRUST_POINTS = [
 ];
 
 const inputClasses =
-  "rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+  "rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-muted transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 export default async function LoginPage({
   searchParams,
@@ -126,7 +126,7 @@ export default async function LoginPage({
 
               <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-border" />
-                <span className="text-xs text-faint">or use your email</span>
+                <span className="text-xs text-muted">or use your email</span>
                 <span className="h-px flex-1 bg-border" />
               </div>
             </>
@@ -178,7 +178,7 @@ export default async function LoginPage({
             <AuthButtons />
           </form>
 
-          <p className="text-center text-xs text-faint">
+          <p className="text-center text-xs text-muted">
             Beta. Not tax advice.
           </p>
         </div>

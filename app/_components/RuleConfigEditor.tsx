@@ -105,7 +105,7 @@ export function RuleConfigEditor({
         >
           <div className="border-b border-border px-5 py-3.5">
             <h2 className="font-display text-[15px] font-semibold text-fg">{group.title}</h2>
-            <p className="mt-0.5 text-[11.5px] text-faint">{group.legalBasis}</p>
+            <p className="mt-0.5 text-[11.5px] text-muted">{group.legalBasis}</p>
           </div>
           <div className="divide-y divide-border">
             {group.fields.map((field) => {
@@ -125,7 +125,7 @@ export function RuleConfigEditor({
                       {field.help}
                     </span>
                     {changed && (
-                      <span className="mt-1 inline-block text-[11px] text-faint">
+                      <span className="mt-1 inline-block text-[11px] text-muted">
                         default: {defaults[name]}
                       </span>
                     )}
@@ -146,7 +146,7 @@ export function RuleConfigEditor({
                         changed ? "border-accent/50" : "border-border"
                       }`}
                     />
-                    <span className="w-24 text-[11.5px] text-faint">
+                    <span className="w-24 text-[11.5px] text-muted">
                       {UNIT_SUFFIX[field.unit]}
                     </span>
                   </div>

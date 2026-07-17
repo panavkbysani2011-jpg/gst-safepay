@@ -83,7 +83,7 @@ export default async function OverviewPage() {
             >
               <p className="text-sm font-semibold text-fg">{m.label}</p>
               <p className="tnum mt-1 font-mono text-xl font-semibold text-fg">{m.count}</p>
-              <p className="text-xs text-faint">{m.unit}</p>
+              <p className="text-xs text-muted">{m.unit}</p>
             </Link>
           ))}
         </div>

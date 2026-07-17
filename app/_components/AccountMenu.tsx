@@ -27,7 +27,7 @@ export function AccountMenu({ email }: { email: string }) {
           <span className="block truncate text-[13px] font-semibold text-fg">
             {friendlyName(email)}
           </span>
-          <span className="block truncate text-[11px] text-faint">{email}</span>
+          <span className="block truncate text-[11px] text-muted">{email}</span>
         </span>
         <svg
           viewBox="0 0 24 24"
