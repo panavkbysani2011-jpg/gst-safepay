@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import type {
+  UdyamCategory,
   VendorVerificationStatus,
   VendorVerificationSummary,
 } from "@/lib/rules/types";
 import type { VendorCfg } from "@/lib/rules/ruleConfig";
 import { DetailDrawer } from "./DetailDrawer";
+import { VendorForm } from "./VendorForm";
+import { deleteVendor } from "@/app/vendor-actions";
 import { TONE_BADGE, type Tone } from "./tone";
 
 export type VendorRowView = {
@@ -17,6 +20,9 @@ export type VendorRowView = {
   gstinValid: boolean;
   lastVerifiedDate: string | null;
   daysSinceVerified: number | null;
+  gstinActive: boolean;
+  udyamRegistered: boolean;
+  udyamCategory: UdyamCategory | null;
 };
 
 const STATUS: Record<VendorVerificationStatus, { label: string; tone: Tone }> = {
@@ -61,17 +67,48 @@ export function VendorsTable({
   config: VendorCfg;
 }) {
   const [selected, setSelected] = useState<VendorRowView | null>(null);
+  const [formTarget, setFormTarget] = useState<VendorRowView | "new" | null>(null);
+  const [armedDelete, setArmedDelete] = useState(false);
+  const [busy, startTransition] = useTransition();
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+
+  // Reset the delete confirmation whenever a different vendor is opened.
+  useEffect(() => {
+    setArmedDelete(false);
+    setActionMsg(null);
+  }, [selected]);
+
+  function handleDelete(row: VendorRowView) {
+    setActionMsg(null);
+    startTransition(async () => {
+      const r = await deleteVendor(row.vendorId);
+      if (r.ok) setSelected(null);
+      else setActionMsg(r.message);
+    });
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-5 py-3.5">
         <h2 className="font-display text-[15px] font-semibold text-fg">Vendor GSTIN verification</h2>
         <span className="text-xs text-faint">format + checksum + re-check cadence</span>
-        <div className="ml-auto flex items-center gap-2 text-[11.5px]">
-          <span className="tnum font-mono font-semibold text-warning">
-            {summary.needsAttentionCount}
+        <div className="ml-auto flex items-center gap-3">
+          <span className="flex items-center gap-2 text-[11.5px]">
+            <span className="tnum font-mono font-semibold text-warning">
+              {summary.needsAttentionCount}
+            </span>
+            <span className="text-faint">of {summary.total} need attention</span>
           </span>
-          <span className="text-faint">of {summary.total} need attention</span>
+          <button
+            type="button"
+            onClick={() => setFormTarget("new")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-semibold text-accent-fg transition-[filter] duration-150 hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-4" aria-hidden>
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add vendor
+          </button>
         </div>
       </div>
 
@@ -164,6 +201,50 @@ export function VendorsTable({
               <p className="mt-1 text-[13px] text-muted">{ADVICE[selected.status]}</p>
             </div>
 
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormTarget(selected);
+                  setSelected(null);
+                }}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                Edit
+              </button>
+              {armedDelete ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(selected)}
+                    disabled={busy}
+                    className="inline-flex h-9 items-center rounded-lg bg-danger px-3 text-[13px] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                  >
+                    {busy ? "Deleting…" : "Confirm delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArmedDelete(false)}
+                    className="inline-flex h-9 items-center rounded-lg border border-border-strong px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    Cancel
+                  </button>
+                  <span className="text-[11.5px] text-faint">
+                    Also removes this vendor&apos;s bills.
+                  </span>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setArmedDelete(true)}
+                  className="inline-flex h-9 items-center rounded-lg border border-danger/50 px-3 text-[13px] font-medium text-danger transition-colors hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  Delete
+                </button>
+              )}
+              {actionMsg && <span className="text-[12px] text-danger">{actionMsg}</span>}
+            </div>
+
             <div>
               <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted uppercase">
                 What we checked
@@ -214,6 +295,26 @@ export function VendorsTable({
               </div>
             </div>
           </>
+        )}
+      </DetailDrawer>
+
+      <DetailDrawer
+        open={formTarget !== null}
+        onClose={() => setFormTarget(null)}
+        title={formTarget === "new" ? "Add vendor" : "Edit vendor"}
+        subtitle={
+          formTarget && formTarget !== "new" ? formTarget.vendorName : undefined
+        }
+        footer="Saved to your account. GSTIN validity is shown after you save."
+      >
+        {formTarget !== null && (
+          <VendorForm
+            vendor={formTarget === "new" ? null : formTarget}
+            onSaved={() => {
+              setFormTarget(null);
+              setSelected(null);
+            }}
+          />
         )}
       </DetailDrawer>
     </section>

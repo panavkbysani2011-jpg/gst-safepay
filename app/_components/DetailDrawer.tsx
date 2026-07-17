@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 type Props = {
   open: boolean;
@@ -28,6 +28,7 @@ export function DetailDrawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -77,7 +78,7 @@ export function DetailDrawer({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="drawer-title"
+        aria-labelledby={titleId}
         aria-hidden={!open}
         // When closed the panel is only slid off-screen, so without `inert` its
         // close button + links stay in the tab order and aria-hidden would wrap
@@ -91,7 +92,7 @@ export function DetailDrawer({
         <div className="flex items-start gap-3 border-b border-border px-5 py-4">
           <div className="min-w-0">
             <h2
-              id="drawer-title"
+              id={titleId}
               className="font-display text-[17px] font-semibold tracking-tight text-fg"
             >
               {title}

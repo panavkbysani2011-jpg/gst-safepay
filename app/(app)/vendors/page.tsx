@@ -28,6 +28,9 @@ export default async function VendorsPage() {
     gstinValid: v.assessment.gstinValid,
     lastVerifiedDate: v.assessment.lastVerifiedDate,
     daysSinceVerified: v.assessment.daysSinceVerified,
+    gstinActive: v.gstinActive,
+    udyamRegistered: v.udyamRegistered,
+    udyamCategory: v.udyamCategory,
   }));
 
   return (
