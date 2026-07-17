@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import type {
   UdyamCategory,
   VendorVerificationStatus,
@@ -73,10 +73,16 @@ export function VendorsTable({
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
   // Reset the delete confirmation whenever a different vendor is opened.
-  useEffect(() => {
+  // Adjusted during render rather than in an effect: an effect would leave one
+  // frame where the drawer shows the NEW vendor while still armed to delete the
+  // previous one, and cascades an extra render. This is React's documented
+  // "adjusting state when a prop changes" pattern.
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
     setArmedDelete(false);
     setActionMsg(null);
-  }, [selected]);
+  }
 
   function handleDelete(row: VendorRowView) {
     setActionMsg(null);

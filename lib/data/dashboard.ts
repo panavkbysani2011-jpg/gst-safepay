@@ -21,6 +21,7 @@ import type { DemoImsRow } from "@/lib/rules/imsFixtures";
 import type { DemoRcmRow } from "@/lib/rules/rcmFixtures";
 import { getRuleConfig } from "./ruleConfig";
 import type { RuleConfig } from "@/lib/rules/ruleConfig";
+import { todayInBusinessZone } from "@/lib/businessDate";
 
 export interface VendorVerificationRow {
   vendorName: string;
@@ -65,10 +66,6 @@ export interface DashboardData {
   ruleConfig: RuleConfig;
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 /** Reads vendors + bills from the DB and runs the deterministic rule engine over them. */
 export async function getDashboardData(ownerId: string): Promise<DashboardData> {
   const [
@@ -91,7 +88,9 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
   ]);
 
   const vendorsById = new Map(vendorRows.map((v) => [v.id, v]));
-  const asOf = todayIso();
+  // Indian statutory time: every deadline below is defined by the Indian day,
+  // and this is recomputed per request, so countdowns move as the day does.
+  const asOf = todayInBusinessZone();
 
   const imsRows: DemoImsRow[] = imsRowsDb.map((r) => ({
     vendorName: r.vendorName,

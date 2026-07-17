@@ -88,8 +88,8 @@ export default async function LoginPage({
             </li>
           ))}
           <li className="mt-2 text-xs text-accent-fg/55">
-            An early prototype. It runs on sample figures until your CA confirms
-            the numbers.
+            In beta. Have your CA confirm the tax-rule figures before you rely on
+            them for real payments.
           </li>
         </ul>
       </section>
@@ -179,7 +179,7 @@ export default async function LoginPage({
           </form>
 
           <p className="text-center text-xs text-faint">
-            Prototype. Sample data. Not tax advice.
+            Beta. Not tax advice.
           </p>
         </div>
       </section>

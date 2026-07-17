@@ -18,8 +18,8 @@ export default function DisclaimerPage() {
         <p>Calculations are deterministic and traceable: every figure links to a rule and a legal basis you can inspect. However, outputs depend entirely on the accuracy and completeness of the data you upload. Wrong or missing rows produce wrong conclusions.</p>
       </LegalSection>
 
-      <LegalSection heading="Prototype status">
-        <p>The current build runs on synthetic demonstration data and has not been certified against live GST-portal data. Treat it as an aid to a conversation with your CA, not a replacement for professional judgement or official portals.</p>
+      <LegalSection heading="Beta status">
+        <p>The Service is in beta. Its tax-rule parameters (rates, day thresholds and penalties) are defaults that a chartered accountant must verify before you rely on them, and it has not been certified against live GST-portal data. Treat it as an aid to a conversation with your CA, not a replacement for professional judgement or official portals.</p>
       </LegalSection>
 
       <LegalSection heading="No liability">
