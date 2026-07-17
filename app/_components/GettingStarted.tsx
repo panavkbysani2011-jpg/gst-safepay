@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { seedDemoData } from "@/app/actions";
 import { dismissGettingStarted } from "@/app/onboarding-actions";
 import type { GettingStartedState, GettingStartedStep } from "@/lib/onboarding";
 
@@ -17,14 +16,6 @@ function CheckIcon() {
   );
 }
 
-function Spinner() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="size-4 animate-spin" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={3} className="opacity-25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth={3} strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function MilestoneRow({
   step,
@@ -84,13 +75,12 @@ function MilestoneRow({
 export function GettingStarted({ state }: { state: GettingStartedState }) {
   const [mounted, setMounted] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [seedPending, startSeed] = useTransition();
   const [dismissPending, startDismiss] = useTransition();
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
 
-  const busy = seedPending || dismissPending || leaving;
+  const busy = dismissPending || leaving;
   const fraction = state.total > 0 ? state.completedCount / state.total : 0;
   const pct = Math.round(fraction * 100);
 
@@ -104,12 +94,6 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
     }, EXIT_MS);
   }
 
-  function handleSeed() {
-    if (busy) return;
-    startSeed(async () => {
-      await seedDemoData();
-    });
-  }
 
   return (
     <section
@@ -174,29 +158,14 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
         </ol>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
-          <button
-            type="button"
-            onClick={handleSeed}
-            disabled={busy}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none"
-          >
-            {seedPending ? (
-              <>
-                <Spinner />
-                Loading demo…
-              </>
-            ) : (
-              "Load demo data"
-            )}
-          </button>
           <Link
             href="/import"
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-border-strong bg-surface px-4 text-sm font-medium text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg shadow-sm transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.985] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none motion-reduce:transition-none"
           >
             Import my data
           </Link>
           <span className="ml-auto text-[11.5px] text-faint">
-            Demo data is synthetic, so it&apos;s safe to explore.
+            Any layout works. Start with bills to see money at risk fastest.
           </span>
         </div>
       </div>

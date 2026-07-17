@@ -5,7 +5,6 @@ import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   clearData,
-  seedDemoData,
   uploadBillsCsv,
   uploadComplianceCsv,
   uploadImsCsv,
@@ -64,8 +63,10 @@ type CardConfig = {
   parse: CsvParser;
   title: string;
   purpose: string;
-  sample: string;
-  columns: string;
+  /** Plain-language description of the data this needs. Deliberately not a list
+   *  of column names: since column matching landed, the file's own headers can
+   *  be anything, and quoting our internal field names implied otherwise. */
+  needs: string;
   viewHref: string;
   viewLabel: string;
   note?: string;
@@ -78,9 +79,8 @@ const CARDS: CardConfig[] = [
     action: uploadVendorsCsv,
     parse: parseVendorsCsv,
     title: "Vendors",
-    purpose: "Your suppliers. Upload this first, since everything else links to it.",
-    sample: "/samples/vendors-sample.csv",
-    columns: "id, name, gstin, gstinActive, udyamRegistered, udyamCategory",
+    purpose: "Who you buy from. Drives GSTIN checks and the MSME 45-day rule.",
+    needs: "Each supplier's name and GSTIN, plus whether they are MSME/Udyam registered and in which category (micro, small or medium).",
     viewHref: "/vendors",
     viewLabel: "View vendors",
   },
@@ -91,12 +91,10 @@ const CARDS: CardConfig[] = [
     parse: parseBillsCsv,
     title: "Bills / payables",
     purpose: "Invoices you owe suppliers. Used to flag MSME 45-day deadlines.",
-    sample: "/samples/bills-sample.csv",
-    columns:
-      "id, vendorId, invoiceAcceptanceDate, amount, hasWrittenAgreement, agreedPaymentDays, paidDate",
+    needs: "Each bill's number, the supplier, the invoice date and the amount. Optionally the agreed payment days and the date you paid it.",
     viewHref: "/payments",
     viewLabel: "View payments",
-    note: "Your vendor column can be an id, a supplier name, or a GSTIN. We match it to an existing vendor, and add any supplier we haven't seen so no row is dropped. You can upload this first if you like.",
+    note: "Your supplier column can be an id, a name, or a GSTIN. We match it to an existing vendor and add any supplier we have not seen, so no row is dropped. Start here if you like.",
   },
   {
     step: 3,
@@ -105,9 +103,7 @@ const CARDS: CardConfig[] = [
     parse: parseImsCsv,
     title: "GST IMS invoices",
     purpose: "Supplier invoices from the GST portal IMS. Flags 2B cutoff risk.",
-    sample: "/samples/ims-sample.csv",
-    columns:
-      "id, vendorId, vendorName, invoiceNo, taxPeriod, taxableValue, gstAmount, imsAction, eligibility",
+    needs: "Each invoice's number, the supplier, the tax period, the taxable value and the GST amount. Optionally what you actioned it as, and whether the credit is eligible.",
     viewHref: "/ims",
     viewLabel: "View IMS",
   },
@@ -117,10 +113,8 @@ const CARDS: CardConfig[] = [
     action: uploadRcmCsv,
     parse: parseRcmCsv,
     title: "Reverse-charge purchases",
-    purpose: "RCM purchases. Watches self-invoice and cash-GST deadlines.",
-    sample: "/samples/rcm-sample.csv",
-    columns:
-      "id, vendorId, vendorName, supplierUnregistered, supplyType, supplyDate, rcmTaxAmount, selfInvoiceIssued, rcmTaxPaidDate",
+    purpose: "Purchases where you owe the GST, not your supplier. Watches self-invoice and cash-GST deadlines.",
+    needs: "The supplier, the supply date and the reverse-charge tax amount. Optionally whether the supplier is unregistered, goods or services, and whether you issued the self-invoice.",
     viewHref: "/rcm",
     viewLabel: "View reverse charge",
   },
@@ -131,8 +125,7 @@ const CARDS: CardConfig[] = [
     parse: parseComplianceCsv,
     title: "Compliance deadlines",
     purpose: "Your filing calendar (GST, TDS, PF, ROC) with an evidence reference.",
-    sample: "/samples/compliance-sample.csv",
-    columns: "id, name, authority, period, dueDate, filedDate, proofRef",
+    needs: "Each filing's name, the authority, the period and the due date. Optionally the date you filed it and a proof reference such as an ARN.",
     viewHref: "/compliance",
     viewLabel: "View compliance",
   },
@@ -699,18 +692,9 @@ function UploadCard({ card, status }: { card: CardConfig; status: ImportKindStat
         )}
       </div>
 
-      <a
-        href={card.sample}
-        download
-        className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-accent-soft"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden>
-          <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
-        </svg>
-        Download sample CSV
-      </a>
-
-      <p className="font-mono text-[11px] leading-relaxed text-faint">columns: {card.columns}</p>
+      <p className="text-[11.5px] leading-relaxed text-faint">
+        <span className="font-medium text-muted">What we need:</span> {card.needs}
+      </p>
       {card.note && (
         <p className="rounded-lg bg-surface-2 px-2.5 py-1.5 text-[11.5px] text-muted">{card.note}</p>
       )}
@@ -790,7 +774,7 @@ function HowItWorks() {
   const steps = [
     {
       t: "1 · You add your data",
-      d: "Upload a CSV or Excel export from any software (Tally, Zoho, your billing system), with any column names or order. Or load our demo to see it working.",
+      d: "Upload a CSV or Excel export straight from any software (Tally, Zoho, your billing system), with any column names in any order. No template to fill in.",
     },
     {
       t: "2 · We match your columns, you confirm",
@@ -866,23 +850,6 @@ export function ImportPortal({ progress }: { progress: ImportProgress }) {
     <div className="flex flex-col gap-6">
       <HowItWorks />
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent-soft p-5">
-        <div>
-          <h2 className="font-display text-[15px] font-semibold text-fg">
-            New here? Try it in one click
-          </h2>
-          <p className="mt-0.5 text-[13px] text-muted">
-            Loads realistic sample vendors, bills and filings so you can see the whole tool working,
-            then clear it whenever you like.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <form action={seedDemoData}>
-            <SubmitButton variant="solid">Load demo data</SubmitButton>
-          </form>
-          <ClearDataControl />
-        </div>
-      </section>
 
       <div>
         <h2 className="mb-1 font-display text-base font-semibold text-fg">Or upload your own</h2>
@@ -899,6 +866,18 @@ export function ImportPortal({ progress }: { progress: ImportProgress }) {
           ))}
         </div>
       </div>
+
+      {progress.addedCount > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-5">
+          <div>
+            <h2 className="font-display text-[15px] font-semibold text-fg">Start over</h2>
+            <p className="mt-0.5 text-[13px] text-muted">
+              Deletes everything you have imported. Your account and settings stay.
+            </p>
+          </div>
+          <ClearDataControl />
+        </section>
+      )}
     </div>
   );
 }
