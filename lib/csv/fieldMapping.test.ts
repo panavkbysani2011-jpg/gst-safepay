@@ -9,6 +9,8 @@ import {
   toBooleanLoose,
   applyMapping,
   toCanonicalCsv,
+  parseAiMappingResponse,
+  mergeAiProposal,
 } from "./fieldMapping";
 import { parseBillsCsv } from "./parseCsv";
 
@@ -174,6 +176,76 @@ describe("applyMapping + toCanonicalCsv", () => {
     const [header, first] = csv.split("\n");
     expect(header).toBe("id,name,gstin,gstinActive,udyamRegistered,udyamCategory");
     expect(first).toContain('"Acme, Inc"'); // comma-containing cell is quoted
+  });
+});
+
+describe("parseAiMappingResponse — untrusted AI output is validated, never believed", () => {
+  const headers = ["Bill No", "Party", "Bill Date", "Net Amount"];
+
+  it("accepts a clean JSON reply, keeping only real columns", () => {
+    const reply = '{"id":"Bill No","vendorId":"Party","invoiceAcceptanceDate":"Bill Date","amount":"Net Amount"}';
+    const out = parseAiMappingResponse(reply, headers, FIELD_SPECS.bills);
+    expect(out?.id).toBe("Bill No");
+    expect(out?.amount).toBe("Net Amount");
+  });
+
+  it("tolerates markdown fences and surrounding prose", () => {
+    const reply = 'Sure! Here is the mapping:\n```json\n{"id":"Bill No"}\n```\nHope that helps.';
+    const out = parseAiMappingResponse(reply, headers, FIELD_SPECS.bills);
+    expect(out?.id).toBe("Bill No");
+  });
+
+  it("DROPS a hallucinated column that is not in the file", () => {
+    const reply = '{"id":"Bill No","amount":"Grand Total XYZ"}'; // second column doesn't exist
+    const out = parseAiMappingResponse(reply, headers, FIELD_SPECS.bills);
+    expect(out?.id).toBe("Bill No");
+    expect(out?.amount).toBeNull(); // hallucination rejected
+  });
+
+  it("ignores unknown field keys the model invents", () => {
+    const reply = '{"id":"Bill No","totallyMadeUpField":"Party"}';
+    const out = parseAiMappingResponse(reply, headers, FIELD_SPECS.bills);
+    expect(out).not.toHaveProperty("totallyMadeUpField");
+  });
+
+  it("returns null on unusable replies so callers fall back to deterministic", () => {
+    expect(parseAiMappingResponse("I'm not sure, sorry!", headers, FIELD_SPECS.bills)).toBeNull();
+    expect(parseAiMappingResponse("", headers, FIELD_SPECS.bills)).toBeNull();
+    expect(parseAiMappingResponse("{not valid json", headers, FIELD_SPECS.bills)).toBeNull();
+    expect(parseAiMappingResponse('["an","array"]', headers, FIELD_SPECS.bills)).toBeNull();
+  });
+});
+
+describe("mergeAiProposal — deterministic wins, AI only fills gaps", () => {
+  it("never overrides a confident deterministic match", () => {
+    const base = { id: "Bill No", vendorId: null, invoiceAcceptanceDate: "Bill Date", amount: null,
+      hasWrittenAgreement: null, agreedPaymentDays: null, paidDate: null };
+    const ai = { id: "Party", vendorId: "Party", invoiceAcceptanceDate: "Net Amount", amount: "Net Amount",
+      hasWrittenAgreement: null, agreedPaymentDays: null, paidDate: null };
+    const { mapping, aiFilled } = mergeAiProposal(base, ai, FIELD_SPECS.bills);
+    expect(mapping.id).toBe("Bill No"); // AI's "Party" ignored
+    expect(mapping.invoiceAcceptanceDate).toBe("Bill Date"); // AI's bad guess ignored
+    expect(mapping.vendorId).toBe("Party"); // gap filled by AI
+    expect(mapping.amount).toBe("Net Amount"); // gap filled by AI
+    expect(aiFilled.sort()).toEqual(["amount", "vendorId"]);
+  });
+
+  it("does not let the AI reuse a column already claimed", () => {
+    const base = { id: "Party", vendorId: null, invoiceAcceptanceDate: null, amount: null,
+      hasWrittenAgreement: null, agreedPaymentDays: null, paidDate: null };
+    const ai = { id: null, vendorId: "Party", invoiceAcceptanceDate: null, amount: null,
+      hasWrittenAgreement: null, agreedPaymentDays: null, paidDate: null };
+    const { mapping, aiFilled } = mergeAiProposal(base, ai, FIELD_SPECS.bills);
+    expect(mapping.vendorId).toBeNull(); // "Party" already used by id
+    expect(aiFilled).toEqual([]);
+  });
+
+  it("is a no-op when there is no AI proposal (no key / call failed)", () => {
+    const base = { id: "Bill No", vendorId: null, invoiceAcceptanceDate: null, amount: null,
+      hasWrittenAgreement: null, agreedPaymentDays: null, paidDate: null };
+    const { mapping, aiFilled } = mergeAiProposal(base, null, FIELD_SPECS.bills);
+    expect(mapping).toEqual(base);
+    expect(aiFilled).toEqual([]);
   });
 });
 

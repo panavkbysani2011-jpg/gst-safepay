@@ -41,9 +41,11 @@ import {
   suggestMapping,
   applyMapping,
   toCanonicalCsv,
+  mergeAiProposal,
   type ImportKind,
   type TargetField,
 } from "@/lib/csv/fieldMapping";
+import { suggestMappingWithAi } from "../mapping-actions";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -394,6 +396,8 @@ function MappingPanel({
   onContinue,
   onCancel,
   unmappedRequired,
+  aiFilled,
+  isAiBusy,
 }: {
   fields: TargetField[];
   headers: string[];
@@ -403,8 +407,11 @@ function MappingPanel({
   onContinue: () => void;
   onCancel: () => void;
   unmappedRequired: string[];
+  aiFilled: string[];
+  isAiBusy: boolean;
 }) {
   const isBlocked = unmappedRequired.length > 0;
+  const aiFilledSet = new Set(aiFilled);
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-2/60 p-3.5">
       <div>
@@ -413,6 +420,11 @@ function MappingPanel({
           We guessed which of your columns feeds each field. Fix any that look
           wrong, then continue. Nothing is saved yet.
         </p>
+        {isAiBusy && (
+          <p className="mt-1 text-[11.5px] text-accent-text">
+            Asking AI to fill the gaps… (you can start matching now)
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
@@ -425,6 +437,14 @@ function MappingPanel({
               <label className="min-w-[8.5rem] flex-1 text-[12.5px] font-medium text-fg">
                 {f.label}
                 {f.required && <span className="ml-0.5 text-danger">*</span>}
+                {aiFilledSet.has(f.key) && (
+                  <span
+                    className="ml-1.5 rounded bg-accent-soft px-1 py-0.5 text-[9.5px] font-semibold tracking-wide text-accent-text uppercase"
+                    title="Suggested by AI — please check this one"
+                  >
+                    AI
+                  </span>
+                )}
               </label>
               <select
                 value={selected}
@@ -490,15 +510,24 @@ function UploadCard({ card }: { card: CardConfig }) {
   const [preview, setPreview] = useState<ParseResult<unknown> | null>(null);
   const [stage, setStage] = useState<"drop" | "mapping" | "preview">("drop");
   const [dragOver, setDragOver] = useState(false);
+  const [aiFilled, setAiFilled] = useState<string[]>([]);
+  const [isAiBusy, setIsAiBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Guards for the async AI pre-fill: never apply a reply for a superseded file,
+  // and never overwrite a mapping the user has already touched.
+  const requestIdRef = useRef(0);
+  const userEditedRef = useRef(false);
   const inputId = `import-file-${card.step}`;
 
   async function acceptFile(file: File | undefined) {
     if (!file) return;
+    const requestId = ++requestIdRef.current;
+    userEditedRef.current = false;
     setFileName(file.name);
     setSubmittedName(null); // invalidate any previous result
     setReadError(null);
     setPreview(null);
+    setAiFilled([]);
     try {
       // Normalize any file type (CSV/TSV/Excel/ODS) to CSV text, then parse to
       // rows keyed by the file's OWN headers — any names, any order.
@@ -518,15 +547,35 @@ function UploadCard({ card }: { card: CardConfig }) {
         setReadError("No rows found. Check the file has a header row with data below it.");
         return;
       }
+      // Deterministic matching first — this is the floor, and it needs no AI.
+      const detected = suggestMapping(headers, fields).mapping;
       setRaw({ headers, rows });
-      setMapping(suggestMapping(headers, fields).mapping);
+      setMapping(detected);
       setStage("mapping");
+
+      // Optional AI pass fills only what detection missed. No key / any failure
+      // leaves the deterministic mapping exactly as-is.
+      setIsAiBusy(true);
+      try {
+        const proposal = await suggestMappingWithAi(card.kind, headers, rows.slice(0, 2));
+        const isStale = requestId !== requestIdRef.current || userEditedRef.current;
+        if (!isStale && proposal.mapping) {
+          const merged = mergeAiProposal(detected, proposal.mapping, fields);
+          setMapping(merged.mapping);
+          setAiFilled(merged.aiFilled);
+        }
+      } catch {
+        // AI is best-effort; the deterministic mapping stands.
+      } finally {
+        if (requestId === requestIdRef.current) setIsAiBusy(false);
+      }
     } catch {
       setReadError("Could not read this file.");
     }
   }
 
   function changeMapping(fieldKey: string, header: string | null) {
+    userEditedRef.current = true;
     setMapping((prev) => {
       const next = { ...(prev ?? {}) };
       // A source column feeds only one field — clear it from any other field first.
@@ -548,6 +597,8 @@ function UploadCard({ card }: { card: CardConfig }) {
   }
 
   function reset() {
+    requestIdRef.current += 1; // discard any AI reply still in flight
+    userEditedRef.current = false;
     setStage("drop");
     setReadError(null);
     setRaw(null);
@@ -555,6 +606,8 @@ function UploadCard({ card }: { card: CardConfig }) {
     setPreview(null);
     setFileName(null);
     setSubmittedName(null);
+    setAiFilled([]);
+    setIsAiBusy(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -630,6 +683,8 @@ function UploadCard({ card }: { card: CardConfig }) {
           onContinue={continueToPreview}
           onCancel={reset}
           unmappedRequired={unmappedRequired}
+          aiFilled={aiFilled}
+          isAiBusy={isAiBusy}
         />
       ) : (
         <>
@@ -692,11 +747,13 @@ function HowItWorks() {
         ))}
       </ol>
       <div className="rounded-xl bg-surface-2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
-        <span className="font-semibold text-fg">Is an AI reading my files?</span> No. Your data is
-        analysed by fixed, published tax rules, not an AI that guesses. That is deliberate: a
-        money-safety tool has to be auditable, so every figure traces back to a rule and a legal
-        section you (or your CA) can check. Your files are parsed and stored privately; they are
-        never sent to a third party or used to train anything.
+        <span className="font-semibold text-fg">Does an AI see my data?</span> Only to suggest
+        column matches, and only that far: when you upload, your column names and up to two sample
+        rows may be sent to an AI so it can propose which column is which. It only suggests —
+        nothing is calculated or saved until you review and confirm, and anything it gets wrong you
+        simply change. Every money figure is computed by fixed, published tax rules, never by an AI,
+        so each one still traces back to a rule and a legal section you (or your CA) can check. Your
+        files are stored privately and are never used to train anything.
       </div>
     </section>
   );

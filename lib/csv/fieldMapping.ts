@@ -281,6 +281,78 @@ export function applyMapping(
   });
 }
 
+// --- AI-proposed mappings (validated, never trusted) -----------------------
+// The optional AI layer only ever *suggests* a mapping. Its raw output is
+// untrusted text, so it is parsed defensively and every column it names is
+// checked against the file's real headers. Anything malformed, hallucinated, or
+// unknown is dropped — the deterministic matcher remains the floor, and the user
+// still confirms before a single row is saved.
+
+/**
+ * Parse an LLM's mapping reply into a validated {fieldKey: header|null} map.
+ * Tolerates markdown fences and extra prose. Returns null if the reply isn't
+ * usable at all, so callers fall back to deterministic matching.
+ */
+export function parseAiMappingResponse(
+  text: string,
+  headers: string[],
+  fields: TargetField[]
+): Record<string, string | null> | null {
+  if (!text) return null;
+  // Models often wrap JSON in ```json fences or add a sentence around it.
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = (fenced ? fenced[1] : text).trim();
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(candidate.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+
+  const headerSet = new Set(headers);
+  const record = raw as Record<string, unknown>;
+  const out: Record<string, string | null> = {};
+  for (const f of fields) {
+    const value = record[f.key];
+    // Only accept a string naming a column that genuinely exists in this file.
+    out[f.key] = typeof value === "string" && headerSet.has(value) ? value : null;
+  }
+  return out;
+}
+
+/**
+ * Merge a validated AI proposal onto the deterministic mapping. The
+ * deterministic match always wins where it found one (it is exact and
+ * explainable); the AI only fills fields it left unmapped, and never reuses a
+ * column already claimed. Returns which fields the AI supplied so the UI can
+ * flag them for review.
+ */
+export function mergeAiProposal(
+  base: Record<string, string | null>,
+  ai: Record<string, string | null> | null,
+  fields: TargetField[]
+): { mapping: Record<string, string | null>; aiFilled: string[] } {
+  const mapping: Record<string, string | null> = { ...base };
+  const aiFilled: string[] = [];
+  if (!ai) return { mapping, aiFilled };
+
+  const used = new Set(Object.values(mapping).filter((v): v is string => v !== null));
+  for (const f of fields) {
+    if (mapping[f.key] !== null) continue; // deterministic match stands
+    const proposed = ai[f.key];
+    if (!proposed || used.has(proposed)) continue;
+    mapping[f.key] = proposed;
+    used.add(proposed);
+    aiFilled.push(f.key);
+  }
+  return { mapping, aiFilled };
+}
+
 function csvEscape(value: string): string {
   return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }
