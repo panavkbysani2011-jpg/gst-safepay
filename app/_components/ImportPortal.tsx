@@ -46,6 +46,7 @@ import {
   type TargetField,
 } from "@/lib/csv/fieldMapping";
 import { suggestMappingWithAi } from "../mapping-actions";
+import type { ImportProgress, ImportKindStatus } from "@/lib/importStatus";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -506,7 +507,55 @@ type RawTable = { headers: string[]; rows: Record<string, string>[] };
 // actually configured, so this flag can never force AI on by itself.
 const IS_AI_MAPPING_ENABLED = process.env.NEXT_PUBLIC_AI_MAPPING_ENABLED === "1";
 
-function UploadCard({ card }: { card: CardConfig }) {
+// Plural-aware label for what a card already holds, e.g. "12 vendors added".
+function addedLabel(kind: ImportKind, count: number): string {
+  const noun: Record<ImportKind, [string, string]> = {
+    vendors: ["vendor", "vendors"],
+    bills: ["bill", "bills"],
+    ims: ["IMS invoice", "IMS invoices"],
+    rcm: ["reverse-charge purchase", "reverse-charge purchases"],
+    compliance: ["deadline", "deadlines"],
+  };
+  const [one, many] = noun[kind];
+  return `${count} ${count === 1 ? one : many} added`;
+}
+
+// Overall setup progress, so the page answers "how far am I?" at a glance.
+function SetupProgress({ progress }: { progress: ImportProgress }) {
+  const { addedCount, total, fraction, allDone } = progress;
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface-2 px-4 py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-[13px] font-semibold text-fg">
+          {allDone ? "All set up" : "Your setup"}
+        </p>
+        <p className="tnum font-mono text-[12.5px] font-semibold text-accent-text">
+          {addedCount} of {total} added
+        </p>
+      </div>
+      <div
+        className="h-2 w-full overflow-hidden rounded-full bg-surface"
+        role="progressbar"
+        aria-valuenow={addedCount}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label="Data types added"
+      >
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-500 motion-reduce:transition-none"
+          style={{ width: `${Math.round(fraction * 100)}%` }}
+        />
+      </div>
+      <p className="text-[11.5px] text-muted">
+        {allDone
+          ? "Every data type has something in it. Re-upload any file to update it."
+          : "Start with bills to see money at risk fastest. We add any supplier we have not seen, so you can upload in any order."}
+      </p>
+    </div>
+  );
+}
+
+function UploadCard({ card, status }: { card: CardConfig; status: ImportKindStatus }) {
   const fields = FIELD_SPECS[card.kind];
   const [result, formAction, isPending] = useActionState(card.action, null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -640,6 +689,14 @@ function UploadCard({ card }: { card: CardConfig }) {
           <h3 className="font-display text-[15px] font-semibold text-fg">{card.title}</h3>
           <p className="mt-0.5 text-[13px] text-muted">{card.purpose}</p>
         </div>
+        {status.isAdded && (
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-semibold text-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden>
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            {addedLabel(card.kind, status.count)}
+          </span>
+        )}
       </div>
 
       <a
@@ -804,7 +861,7 @@ function ClearDataControl() {
   );
 }
 
-export function ImportPortal() {
+export function ImportPortal({ progress }: { progress: ImportProgress }) {
   return (
     <div className="flex flex-col gap-6">
       <HowItWorks />
@@ -830,12 +887,15 @@ export function ImportPortal() {
       <div>
         <h2 className="mb-1 font-display text-base font-semibold text-fg">Or upload your own</h2>
         <p className="mb-4 text-[13px] text-muted">
-          Do them in order. Download a sample, replace the example rows with your data, keep the
-          header row, then upload. You&apos;ll see a preview before anything is saved.
+          Upload each file in any layout. We match your columns, show you a preview, and save
+          nothing until you confirm.
         </p>
+        <div className="mb-4">
+          <SetupProgress progress={progress} />
+        </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {CARDS.map((card) => (
-            <UploadCard key={card.title} card={card} />
+            <UploadCard key={card.title} card={card} status={progress.byKind[card.kind]} />
           ))}
         </div>
       </div>
