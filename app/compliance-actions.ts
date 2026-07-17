@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import { rateLimit, retryPhrase } from "@/lib/rate-limit";
+import { todayInBusinessZone } from "@/lib/businessDate";
 
 const BUCKET = "compliance-proofs";
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB — matches the bucket's file_size_limit.
@@ -93,4 +94,77 @@ export async function removeComplianceProof(deadlineId: string): Promise<ProofRe
   });
   revalidatePath("/", "layout");
   return { ok: true, message: "Proof document removed." };
+}
+
+// --- Filing status ---------------------------------------------------------
+// The other half of the deadline loop: once a return is filed it should leave
+// the calendar's "due" and "overdue" counts and the dashboard timeline, exactly
+// as marking a bill paid drops it out of the payment queue.
+
+/** Mark a filing done as of today (Indian business date); the status recomputes to Filed. */
+export async function markComplianceFiled(deadlineId: string): Promise<ProofResult> {
+  const user = await requireUser();
+  const limited = await rateLimit(`compliance:${user.id}`, 60, 600);
+  if (!limited.ok) {
+    return { ok: false, message: `Too many changes. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` };
+  }
+  if (!deadlineId) return { ok: false, message: "Missing deadline reference." };
+
+  try {
+    await db.complianceDeadline.update({
+      where: { ownerId_id: { ownerId: user.id, id: deadlineId } },
+      data: { filedDate: todayInBusinessZone() },
+    });
+  } catch {
+    return { ok: false, message: "That deadline no longer exists." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Marked filed." };
+}
+
+/** Undo a filed mark (clears the filed date), owner-scoped. Keeps any proof file. */
+export async function markComplianceUnfiled(deadlineId: string): Promise<ProofResult> {
+  const user = await requireUser();
+  const limited = await rateLimit(`compliance:${user.id}`, 60, 600);
+  if (!limited.ok) {
+    return { ok: false, message: `Too many changes. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` };
+  }
+  if (!deadlineId) return { ok: false, message: "Missing deadline reference." };
+
+  try {
+    await db.complianceDeadline.update({
+      where: { ownerId_id: { ownerId: user.id, id: deadlineId } },
+      data: { filedDate: null },
+    });
+  } catch {
+    return { ok: false, message: "That deadline no longer exists." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Marked unfiled." };
+}
+
+/** Delete a filing deadline and its stored proof file (a wrong or duplicate row), owner-scoped. */
+export async function deleteComplianceDeadline(deadlineId: string): Promise<ProofResult> {
+  const user = await requireUser();
+  const limited = await rateLimit(`compliance:${user.id}`, 60, 600);
+  if (!limited.ok) {
+    return { ok: false, message: `Too many changes. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` };
+  }
+  if (!deadlineId) return { ok: false, message: "Missing deadline reference." };
+
+  const row = await db.complianceDeadline.findUnique({
+    where: { ownerId_id: { ownerId: user.id, id: deadlineId } },
+  });
+  if (!row) return { ok: false, message: "That deadline no longer exists." };
+
+  // Remove the proof file first so we never orphan a blob after the row is gone.
+  if (row.proofFilePath) {
+    const supabase = await createClient();
+    await supabase.storage.from(BUCKET).remove([row.proofFilePath]);
+  }
+  await db.complianceDeadline.delete({
+    where: { ownerId_id: { ownerId: user.id, id: deadlineId } },
+  });
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Deadline deleted." };
 }
