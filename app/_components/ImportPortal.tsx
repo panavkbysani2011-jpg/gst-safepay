@@ -440,7 +440,7 @@ function MappingPanel({
                 {aiFilledSet.has(f.key) && (
                   <span
                     className="ml-1.5 rounded bg-accent-soft px-1 py-0.5 text-[9.5px] font-semibold tracking-wide text-accent-text uppercase"
-                    title="Suggested by AI — please check this one"
+                    title="Suggested by AI, please check this one"
                   >
                     AI
                   </span>
@@ -455,7 +455,7 @@ function MappingPanel({
                   isMissing ? "border-danger/60" : "border-border-strong"
                 }`}
               >
-                <option value="">{f.required ? "— pick a column —" : "— skip —"}</option>
+                <option value="">{f.required ? "Pick a column…" : "Skip this field"}</option>
                 {headers.map((h) => (
                   <option key={h} value={h}>
                     {h}
@@ -718,7 +718,7 @@ function UploadCard({ card }: { card: CardConfig }) {
               <path d="M4 20h16" />
             </svg>
             <span className="text-[13px] font-medium text-fg">Drop your file here, or click to browse</span>
-            <span className="text-[11px] text-faint">Any layout works — CSV or Excel (.csv, .xlsx, .xls, .ods). We match your columns next.</span>
+            <span className="text-[11px] text-faint">Any layout works. CSV or Excel (.csv, .xlsx, .xls, .ods), and we match your columns next.</span>
           </label>
           {readError && (
             <p className="rounded-lg bg-danger-soft px-3 py-2 text-[12px] text-danger">{readError}</p>
@@ -733,7 +733,7 @@ function HowItWorks() {
   const steps = [
     {
       t: "1 · You add your data",
-      d: "Upload a CSV or Excel export from any software (Tally, Zoho, your billing system) — any column names or order. Or load our demo to see it working.",
+      d: "Upload a CSV or Excel export from any software (Tally, Zoho, your billing system), with any column names or order. Or load our demo to see it working.",
     },
     {
       t: "2 · We match your columns, you confirm",
@@ -758,11 +758,11 @@ function HowItWorks() {
       <div className="rounded-xl bg-surface-2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
         <span className="font-semibold text-fg">Does an AI see my data?</span> Only to suggest
         column matches, and only that far: when you upload, your column names and up to two sample
-        rows may be sent to an AI so it can propose which column is which. It only suggests —
-        nothing is calculated or saved until you review and confirm, and anything it gets wrong you
-        simply change. Every money figure is computed by fixed, published tax rules, never by an AI,
-        so each one still traces back to a rule and a legal section you (or your CA) can check. Your
-        files are stored privately and are never used to train anything.
+        rows may be sent to an AI so it can propose which column is which. It only suggests. Nothing
+        is calculated or saved until you review and confirm, and anything it gets wrong you simply
+        change. Every money figure is computed by fixed, published tax rules, never by an AI, so each
+        one still traces back to a rule and a legal section you (or your CA) can check. Your files
+        are stored privately and are never used to train anything.
       </div>
     </section>
   );

@@ -155,7 +155,7 @@ export const RULE_CONFIG_GROUPS: RuleGroup[] = [
   {
     key: "vendor",
     title: "Vendor GSTIN verification",
-    legalBasis: "Operational cadence — CA to set per firm policy.",
+    legalBasis: "Operational cadence. CA to set per firm policy.",
     fields: [
       { group: "vendor", key: "recheckCadenceDays", label: "Re-check cadence", help: "Re-verify each vendor's GSTIN/Udyam at least this often.", unit: "days" },
     ],
@@ -163,7 +163,7 @@ export const RULE_CONFIG_GROUPS: RuleGroup[] = [
   {
     key: "compliance",
     title: "Compliance calendar",
-    legalBasis: "Operational — warning lead time only.",
+    legalBasis: "Operational. Warning lead time only.",
     fields: [
       { group: "compliance", key: "dueSoonWindowDays", label: "Due-soon warning window", help: "Flag a filing as due-soon this many days before its deadline.", unit: "days" },
     ],
