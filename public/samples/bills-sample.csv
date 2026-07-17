@@ -1,9 +1,0 @@
-id,vendorId,invoiceAcceptanceDate,amount,hasWrittenAgreement,agreedPaymentDays,paidDate
-bill-breach-1,v-steelworks,2026-04-01,340000,true,45,
-bill-duesoon-1,v-packaging,2026-05-20,120000,true,45,
-bill-duesoon-2,v-logistics,2026-06-22,60000,false,,
-bill-safe-1,v-steelworks,2026-06-25,90000,true,45,
-bill-paidlate-1,v-packaging,2026-04-01,200000,true,45,2026-06-01
-bill-paidontime-1,v-steelworks,2026-06-01,75000,true,45,2026-06-20
-bill-medium-1,v-enterprise,2026-03-01,500000,true,60,
-bill-nonmsme-1,v-nonmsme,2026-03-01,150000,false,,

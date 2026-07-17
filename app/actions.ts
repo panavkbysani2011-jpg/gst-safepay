@@ -14,10 +14,6 @@ import {
 } from "@/lib/csv/parseCsv";
 import { fileToCsv } from "@/lib/csv/toCsv";
 import { planVendorLinks } from "@/lib/csv/vendorLink";
-import { DEMO_BILLS, DEMO_VENDORS } from "@/lib/rules/fixtures";
-import { DEMO_IMS_ROWS } from "@/lib/rules/imsFixtures";
-import { DEMO_RCM_ROWS } from "@/lib/rules/rcmFixtures";
-import { DEMO_COMPLIANCE } from "@/lib/rules/complianceFixtures";
 
 export interface UploadResult {
   ok: boolean;
@@ -319,85 +315,6 @@ export async function uploadComplianceCsv(
     inserted: valid.length,
     errors,
   };
-}
-
-export async function seedDemoData(): Promise<void> {
-  const user = await requireUser();
-  for (const v of DEMO_VENDORS) {
-    await db.vendor.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: v.id } },
-      create: { ...v, ownerId: user.id },
-      update: {
-        name: v.name,
-        gstin: v.gstin,
-        gstinActive: v.gstinActive,
-        udyamRegistered: v.udyamRegistered,
-        udyamCategory: v.udyamCategory,
-        lastVerifiedDate: v.lastVerifiedDate ?? null,
-      },
-    });
-  }
-  for (const b of DEMO_BILLS) {
-    await db.bill.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: b.id } },
-      create: { ...b, ownerId: user.id },
-      update: {
-        vendorId: b.vendorId,
-        invoiceAcceptanceDate: b.invoiceAcceptanceDate,
-        amount: b.amount,
-        hasWrittenAgreement: b.hasWrittenAgreement,
-        agreedPaymentDays: b.agreedPaymentDays,
-        paidDate: b.paidDate,
-      },
-    });
-  }
-  for (const { invoice, vendorName } of DEMO_IMS_ROWS) {
-    await db.imsInvoice.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: invoice.id } },
-      create: { ...invoice, vendorName, ownerId: user.id },
-      update: {
-        vendorId: invoice.vendorId,
-        vendorName,
-        invoiceNo: invoice.invoiceNo,
-        taxPeriod: invoice.taxPeriod,
-        taxableValue: invoice.taxableValue,
-        gstAmount: invoice.gstAmount,
-        imsAction: invoice.imsAction,
-        eligibility: invoice.eligibility,
-      },
-    });
-  }
-  for (const { purchase, vendorName } of DEMO_RCM_ROWS) {
-    await db.rcmPurchase.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: purchase.id } },
-      create: { ...purchase, vendorName, ownerId: user.id },
-      update: {
-        vendorId: purchase.vendorId,
-        vendorName,
-        supplierUnregistered: purchase.supplierUnregistered,
-        supplyType: purchase.supplyType,
-        supplyDate: purchase.supplyDate,
-        rcmTaxAmount: purchase.rcmTaxAmount,
-        selfInvoiceIssued: purchase.selfInvoiceIssued,
-        rcmTaxPaidDate: purchase.rcmTaxPaidDate,
-      },
-    });
-  }
-  for (const c of DEMO_COMPLIANCE) {
-    await db.complianceDeadline.upsert({
-      where: { ownerId_id: { ownerId: user.id, id: c.id } },
-      create: { ...c, ownerId: user.id },
-      update: {
-        name: c.name,
-        authority: c.authority,
-        period: c.period,
-        dueDate: c.dueDate,
-        filedDate: c.filedDate,
-        proofRef: c.proofRef,
-      },
-    });
-  }
-  revalidatePath("/", "layout");
 }
 
 export async function clearData(): Promise<void> {

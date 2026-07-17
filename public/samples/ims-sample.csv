@@ -1,4 +1,0 @@
-id,vendorId,vendorName,invoiceNo,taxPeriod,taxableValue,gstAmount,imsAction,eligibility
-ims-1,v-steelworks,Bharath Steelworks,BS/2026/312,2026-06,500000,90000,accept,eligible
-ims-2,v-packaging,Sundar Packaging Co,SPC-1189,2026-07,300000,54000,none,unsure
-ims-3,v-quicksale,Quicksale Traders,QT-2205,2026-05,500000,90000,none,ineligible
