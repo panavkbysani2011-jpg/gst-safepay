@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
@@ -8,6 +9,8 @@ import { getGettingStartedState, GETTING_STARTED_DISMISS_COOKIE } from "@/lib/on
 import { GettingStarted } from "@/app/_components/GettingStarted";
 import { OverviewBoard } from "@/app/_components/OverviewBoard";
 import { DeadlineTimeline } from "@/app/_components/DeadlineTimeline";
+import { PlainBrief, BriefSkeleton } from "@/app/_components/PlainBrief";
+import { isBriefConfigured } from "@/lib/ai/brief";
 import { EmptyState, SectionHeading } from "@/app/_components/ui";
 
 export default async function OverviewPage() {
@@ -61,6 +64,13 @@ export default async function OverviewPage() {
       {showGettingStarted && <GettingStarted state={gettingStarted} />}
       <OverviewBoard model={overview} />
       <DeadlineTimeline buckets={buckets} deadlines={deadlines} />
+      {/* Off entirely unless a key is configured, so the default build makes no
+          external call and the dashboard never waits on one. */}
+      {isBriefConfigured() && deadlines.length > 0 && (
+        <Suspense fallback={<BriefSkeleton />}>
+          <PlainBrief overview={overview} buckets={buckets} deadlines={deadlines} />
+        </Suspense>
+      )}
 
       <section className="flex flex-col gap-3">
         <SectionHeading>Modules</SectionHeading>
