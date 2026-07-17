@@ -46,8 +46,8 @@ export function SiteFooter() {
 
         <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6 text-[12px] text-faint sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Prototype on synthetic data, not tax advice. Tax-rule parameters must be
-            verified by a chartered accountant before real use.
+            In beta. Not tax advice. Tax-rule parameters must be verified by a
+            chartered accountant before real use.
           </p>
           <p>© 2026 GST SafePay · Made in India</p>
         </div>

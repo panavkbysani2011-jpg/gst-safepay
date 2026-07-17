@@ -22,10 +22,10 @@ export function LegalDoc({
       <div className="mt-8 flex flex-col gap-7">{children}</div>
 
       <div className="mt-10 rounded-xl border border-warning/30 bg-warning-soft px-4 py-3 text-[13px] text-fg">
-        <span className="font-semibold text-warning">Beta notice.</span> GST SafePay is a
-        prototype running on synthetic data. These policies describe how the product is
-        designed to operate; please have them reviewed by a qualified professional before
-        relying on the service for a live business.
+        <span className="font-semibold text-warning">Beta notice.</span> GST SafePay is in
+        beta. These policies describe how the product is designed to operate; please have
+        them reviewed by a qualified professional before relying on the service for a live
+        business.
       </div>
     </article>
   );
