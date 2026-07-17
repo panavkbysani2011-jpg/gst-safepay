@@ -6,8 +6,13 @@ import { formatINR } from "@/lib/format";
 import { getBusinessProfile } from "@/lib/data/businessProfile";
 import { ReportPrintButton } from "@/app/_components/ReportPrintButton";
 import { EmptyState } from "@/app/_components/ui";
+import { BUSINESS_TIME_ZONE } from "@/lib/businessDate";
 
+// Pinned to Indian statutory time: this report goes to a CA, so its "as of" date
+// must be the same Indian day the figures were computed against, not the
+// server's (UTC) day.
 const dateFmt = new Intl.DateTimeFormat("en-IN", {
+  timeZone: BUSINESS_TIME_ZONE,
   day: "numeric",
   month: "long",
   year: "numeric",

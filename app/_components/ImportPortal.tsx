@@ -46,6 +46,7 @@ import {
 } from "@/lib/csv/fieldMapping";
 import { suggestMappingWithAi } from "../mapping-actions";
 import type { ImportProgress, ImportKindStatus } from "@/lib/importStatus";
+import { todayInBusinessZone } from "@/lib/businessDate";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -350,8 +351,10 @@ function ResultPanel({
   );
 }
 
+// Indian statutory time, matching the rule engines — otherwise a bill dated
+// today would be flagged "future-dated" for the first 5.5 hours of every day.
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayInBusinessZone();
 }
 
 // Advisory data-health checks, keyed by the card's parser identity — deterministic,
