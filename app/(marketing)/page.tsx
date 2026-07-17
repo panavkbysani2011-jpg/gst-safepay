@@ -66,7 +66,7 @@ function CockpitPreview() {
         <p className="text-[10.5px] font-semibold tracking-[0.14em] text-muted uppercase">
           Total money at risk
         </p>
-        <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-faint">
+        <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-muted">
           <span className="size-1.5 rounded-full bg-success" aria-hidden />
           live from your data
         </span>
@@ -104,7 +104,7 @@ function CockpitPreview() {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[10.5px] text-faint">
+      <p className="mt-3 text-[10.5px] text-muted">
         Sample figures. Every number links back to the rule behind it.
       </p>
     </div>
@@ -148,7 +148,7 @@ export default function LandingPage() {
                 See how it works
               </a>
             </div>
-            <p className="text-[12.5px] text-faint">
+            <p className="text-[12.5px] text-muted">
               Fixed tax rules, not AI · Every figure a CA can audit · Your data stays private
             </p>
           </div>

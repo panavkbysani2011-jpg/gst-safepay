@@ -115,7 +115,7 @@ export function DetailDrawer({
         <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4">{children}</div>
 
         {footer && (
-          <div className="mt-auto border-t border-border px-5 py-3.5 text-[11.5px] text-faint">
+          <div className="mt-auto border-t border-border px-5 py-3.5 text-[11.5px] text-muted">
             {footer}
           </div>
         )}

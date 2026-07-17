@@ -97,13 +97,13 @@ export function VendorsTable({
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-5 py-3.5">
         <h2 className="font-display text-[15px] font-semibold text-fg">Vendor GSTIN verification</h2>
-        <span className="text-xs text-faint">format + checksum + re-check cadence</span>
+        <span className="text-xs text-muted">format + checksum + re-check cadence</span>
         <div className="ml-auto flex items-center gap-3">
           <span className="flex items-center gap-2 text-[11.5px]">
             <span className="tnum font-mono font-semibold text-warning">
               {summary.needsAttentionCount}
             </span>
-            <span className="text-faint">of {summary.total} need attention</span>
+            <span className="text-muted">of {summary.total} need attention</span>
           </span>
           <button
             type="button"
@@ -235,7 +235,7 @@ export function VendorsTable({
                   >
                     Cancel
                   </button>
-                  <span className="text-[11.5px] text-faint">
+                  <span className="text-[11.5px] text-muted">
                     Also removes this vendor&apos;s bills.
                   </span>
                 </>
@@ -287,7 +287,7 @@ export function VendorsTable({
                     </span>
                     <span className="min-w-0">
                       <span className="text-[13px] font-semibold text-fg">{s.label}</span>
-                      <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">{s.basis}</span>
+                      <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">{s.basis}</span>
                     </span>
                     <span
                       className={`tnum ml-auto shrink-0 pl-2 text-right font-mono text-[13.5px] font-semibold ${

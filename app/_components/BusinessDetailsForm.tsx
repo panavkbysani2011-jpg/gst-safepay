@@ -6,7 +6,7 @@ import type { BusinessProfile } from "@/lib/businessProfile";
 import { FormSubmit } from "./FormSubmit";
 
 const inputClass =
-  "mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-[14px] text-fg transition-colors placeholder:text-faint focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+  "mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-[14px] text-fg transition-colors placeholder:text-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 export function BusinessDetailsForm({ profile }: { profile: BusinessProfile }) {
   const [state, formAction] = useActionState(saveBusinessProfile, null);
@@ -37,7 +37,7 @@ export function BusinessDetailsForm({ profile }: { profile: BusinessProfile }) {
           placeholder="e.g. 27AAPFU0939F1ZV"
           className={`${inputClass} font-mono uppercase`}
         />
-        <span className="mt-1 block text-[11.5px] text-faint">
+        <span className="mt-1 block text-[11.5px] text-muted">
           We check the format and checksum offline. That does not confirm the GSTIN is live on the portal.
         </span>
       </label>

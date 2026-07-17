@@ -141,7 +141,7 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
             <span className="font-medium text-muted">
               {state.completedCount} of {state.total} done
             </span>
-            <span className="tnum font-mono text-faint">{pct}%</span>
+            <span className="tnum font-mono text-muted">{pct}%</span>
           </div>
           <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
             <div
@@ -164,7 +164,7 @@ export function GettingStarted({ state }: { state: GettingStartedState }) {
           >
             Import my data
           </Link>
-          <span className="ml-auto text-[11.5px] text-faint">
+          <span className="ml-auto text-[11.5px] text-muted">
             Any layout works. Start with bills to see money at risk fastest.
           </span>
         </div>

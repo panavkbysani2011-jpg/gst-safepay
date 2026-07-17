@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 /* ─── Semantic tokens → Tailwind v4 utilities (bg-canvas, text-muted, border-border, …) ─── */
+/* Text hierarchy: --fg for primary, --muted for anything a user must read.
+   --faint is NOT a text colour: it only clears the 3:1 non-text bar (WCAG 1.4.11)
+   for icons and dots, not the 4.5:1 normal-text bar. Any --faint dark enough for
+   body text is indistinguishable from --muted, so text belongs on --muted. */
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
@@ -40,7 +44,7 @@
   --border-strong: #cfd4dc;
   --fg: #101828;
   --muted: #5b6472;
-  --faint: #98a2b3;
+  --faint: #828b9c;
   --accent: #0f766e;
   --accent-fg: #ffffff;
   --accent-text: #0f766e;
@@ -96,7 +100,7 @@
   --border-strong: #cdbf9f;
   --fg: #2a2620;
   --muted: #6d6454;
-  --faint: #9c917a;
+  --faint: #8e836d;
   --accent: #0f766e;
   --accent-fg: #ffffff;
   --accent-text: #0b5c55;

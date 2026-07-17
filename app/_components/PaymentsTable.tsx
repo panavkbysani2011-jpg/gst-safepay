@@ -80,7 +80,7 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
       <div className="flex items-center gap-3 border-b border-border px-5 py-3.5">
         <h2 className="font-display text-[15px] font-semibold text-fg">Who to pay first</h2>
-        <span className="text-xs text-faint">ranked by cost of delay</span>
+        <span className="text-xs text-muted">ranked by cost of delay</span>
         <button
           type="button"
           onClick={() => setCompact((c) => !c)}
@@ -135,7 +135,7 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
                     <div className="text-[13px] text-fg">
                       {r.dueDate ? formatDate(r.dueDate) : "—"}
                     </div>
-                    <div className="text-[11.5px] text-faint">{daysLabel(r.daysRemaining)}</div>
+                    <div className="text-[11.5px] text-muted">{daysLabel(r.daysRemaining)}</div>
                   </td>
                   <td className={`px-4 ${rowPad}`}>
                     <StatusBadge status={r.status} />
@@ -214,7 +214,7 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
                     </span>
                     <span className="min-w-0">
                       <span className="text-[13px] font-semibold text-fg">{s.label}</span>
-                      <span className="mt-0.5 block text-[11.5px] leading-snug text-faint">
+                      <span className="mt-0.5 block text-[11.5px] leading-snug text-muted">
                         {s.basis}
                       </span>
                     </span>

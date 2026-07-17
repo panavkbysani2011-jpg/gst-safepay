@@ -68,7 +68,7 @@ export default async function ForgotPasswordPage({
                 required
                 autoComplete="email"
                 placeholder="you@company.in"
-                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-faint transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="rounded-lg border border-border bg-surface-2 px-3 py-2.5 text-fg placeholder:text-muted transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               />
             </label>
             {error && (

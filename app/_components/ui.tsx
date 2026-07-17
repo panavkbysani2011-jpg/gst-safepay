@@ -57,7 +57,7 @@ export function PanelHeader({ title, tag }: { title: string; tag: string }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-2">
       <SectionHeading>{title}</SectionHeading>
-      <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-faint uppercase">
+      <span className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium tracking-widest text-muted uppercase">
         {tag}
       </span>
     </div>

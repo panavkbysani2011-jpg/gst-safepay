@@ -93,7 +93,7 @@ export function ComplianceProof({
         <UploadButton hasFile={hasFile} />
       </form>
 
-      <p className="text-[11px] text-faint">PDF, PNG or JPG · up to 5 MB · stored privately, only you can open it.</p>
+      <p className="text-[11px] text-muted">PDF, PNG or JPG · up to 5 MB · stored privately, only you can open it.</p>
 
       {(result || note) && (
         <p

@@ -215,7 +215,7 @@ function PreviewPanel({
                 {cols.map((c) => (
                   <th
                     key={c}
-                    className="px-2 py-1.5 font-mono font-medium whitespace-nowrap text-faint"
+                    className="px-2 py-1.5 font-mono font-medium whitespace-nowrap text-muted"
                   >
                     {c}
                   </th>
@@ -238,7 +238,7 @@ function PreviewPanel({
             </tbody>
           </table>
           {rows.length > sample.length && (
-            <p className="px-2 py-1.5 text-[11px] text-faint">
+            <p className="px-2 py-1.5 text-[11px] text-muted">
               …and {rows.length - sample.length} more valid row(s).
             </p>
           )}
@@ -460,7 +460,7 @@ function MappingPanel({
                 ))}
               </select>
               <span
-                className="min-w-[5rem] flex-1 truncate text-[11px] text-faint"
+                className="min-w-[5rem] flex-1 truncate text-[11px] text-muted"
                 title={sampleVal}
               >
                 {sampleVal ? `e.g. ${sampleVal}` : ""}
@@ -695,7 +695,7 @@ function UploadCard({ card, status }: { card: CardConfig; status: ImportKindStat
         )}
       </div>
 
-      <p className="text-[11.5px] leading-relaxed text-faint">
+      <p className="text-[11.5px] leading-relaxed text-muted">
         <span className="font-medium text-muted">What we need:</span> {card.needs}
       </p>
       {card.note && (
@@ -762,7 +762,7 @@ function UploadCard({ card, status }: { card: CardConfig; status: ImportKindStat
               <path d="M4 20h16" />
             </svg>
             <span className="text-[13px] font-medium text-fg">Drop your file here, or click to browse</span>
-            <span className="text-[11px] text-faint">Any layout works. CSV or Excel (.csv, .xlsx, .xls, .ods), and we match your columns next.</span>
+            <span className="text-[11px] text-muted">Any layout works. CSV or Excel (.csv, .xlsx, .xls, .ods), and we match your columns next.</span>
           </label>
           {readError && (
             <p className="rounded-lg bg-danger-soft px-3 py-2 text-[12px] text-danger">{readError}</p>

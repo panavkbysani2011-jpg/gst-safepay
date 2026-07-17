@@ -7,7 +7,7 @@ import { FormSubmit } from "./FormSubmit";
 import type { VendorRowView } from "./VendorsTable";
 
 const inputClass =
-  "mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-[14px] text-fg transition-colors placeholder:text-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+  "mt-1.5 w-full rounded-lg border border-border bg-canvas px-3 py-2 text-[14px] text-fg transition-colors placeholder:text-muted focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 const checkboxClass =
   "size-4 shrink-0 rounded border-border accent-[var(--accent)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
@@ -56,7 +56,7 @@ export function VendorForm({
           placeholder="e.g. 27AAPFU0939F1ZV"
           className={`${inputClass} font-mono uppercase`}
         />
-        <span className="mt-1 block text-[11.5px] text-faint">
+        <span className="mt-1 block text-[11.5px] text-muted">
           Format and checksum are checked after saving; an invalid GSTIN is flagged, not blocked.
         </span>
       </label>
@@ -95,7 +95,7 @@ export function VendorForm({
             </option>
           ))}
         </select>
-        <span className="mt-1 block text-[11.5px] text-faint">
+        <span className="mt-1 block text-[11.5px] text-muted">
           Needed for the 45-day MSME payment rule once the supplier is registered.
         </span>
       </label>
