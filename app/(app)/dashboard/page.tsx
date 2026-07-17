@@ -3,15 +3,19 @@ import { cookies } from "next/headers";
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { buildOverview } from "@/lib/data/overview";
+import { buildDeadlines, bucketDeadlines } from "@/lib/data/deadlines";
 import { getGettingStartedState, GETTING_STARTED_DISMISS_COOKIE } from "@/lib/onboarding";
 import { GettingStarted } from "@/app/_components/GettingStarted";
 import { OverviewBoard } from "@/app/_components/OverviewBoard";
+import { DeadlineTimeline } from "@/app/_components/DeadlineTimeline";
 import { EmptyState, SectionHeading } from "@/app/_components/ui";
 
 export default async function OverviewPage() {
   const user = await requireUser();
   const data = await getDashboardData(user.id);
   const overview = buildOverview(data);
+  const deadlines = buildDeadlines(data);
+  const buckets = bucketDeadlines(deadlines);
 
   const gettingStarted = getGettingStartedState({
     vendors: data.totalVendors,
@@ -38,8 +42,8 @@ export default async function OverviewPage() {
         actionHref="/import"
         actionLabel="Import your data"
       >
-        Load the demo data or upload your vendor and bill CSVs to see the money
-        at risk across every module.
+        Upload your vendor and bill files to see the money at risk across every
+        module.
       </EmptyState>
     );
   }
@@ -56,6 +60,7 @@ export default async function OverviewPage() {
     <div className="flex flex-col gap-8">
       {showGettingStarted && <GettingStarted state={gettingStarted} />}
       <OverviewBoard model={overview} />
+      <DeadlineTimeline buckets={buckets} deadlines={deadlines} />
 
       <section className="flex flex-col gap-3">
         <SectionHeading>Modules</SectionHeading>
