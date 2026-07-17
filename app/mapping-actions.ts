@@ -26,9 +26,12 @@ export async function suggestMappingWithAi(
   headers: string[],
   sampleRows: Record<string, string>[]
 ): Promise<{ mapping: Record<string, string | null> | null }> {
+  // Cheap no-op first: when no key is configured this does nothing at all, so it
+  // must not authenticate (and thus must not redirect a caller) just to say "off".
+  if (!isAiMappingConfigured()) return { mapping: null };
+
   // Server actions are public endpoints: authenticate and validate everything.
   const user = await requireUser();
-  if (!isAiMappingConfigured()) return { mapping: null };
   if (!isImportKind(kind)) return { mapping: null };
   if (!Array.isArray(headers) || headers.length === 0 || headers.length > MAX_HEADERS) {
     return { mapping: null };

@@ -499,6 +499,13 @@ function MappingPanel({
 
 type RawTable = { headers: string[]; rows: Record<string, string>[] };
 
+// Whether to consult the optional AI mapping layer at all. Non-secret, so it can
+// be a public flag: with it off (the default) the client never calls the AI
+// action, so imports behave exactly as the deterministic-only flow — no round
+// trip, no "asking AI" hint. The server independently re-checks that a key is
+// actually configured, so this flag can never force AI on by itself.
+const IS_AI_MAPPING_ENABLED = process.env.NEXT_PUBLIC_AI_MAPPING_ENABLED === "1";
+
 function UploadCard({ card }: { card: CardConfig }) {
   const fields = FIELD_SPECS[card.kind];
   const [result, formAction, isPending] = useActionState(card.action, null);
@@ -553,8 +560,10 @@ function UploadCard({ card }: { card: CardConfig }) {
       setMapping(detected);
       setStage("mapping");
 
-      // Optional AI pass fills only what detection missed. No key / any failure
+      // Optional AI pass fills only what detection missed. Skipped entirely when
+      // disabled, so the default path makes no extra request at all; any failure
       // leaves the deterministic mapping exactly as-is.
+      if (!IS_AI_MAPPING_ENABLED) return;
       setIsAiBusy(true);
       try {
         const proposal = await suggestMappingWithAi(card.kind, headers, rows.slice(0, 2));
