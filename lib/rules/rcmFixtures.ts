@@ -54,7 +54,7 @@ export const DEMO_RCM_ROWS: DemoRcmRow[] = [
     },
   },
   {
-    vendorName: "Legal Advisory LLP (registered — RCM service)",
+    vendorName: "Legal Advisory LLP (registered, RCM service)",
     purchase: {
       id: "rcm-registered",
       vendorId: "v-legal",

@@ -35,6 +35,17 @@ import {
   type HealthWarning,
 } from "@/lib/csv/dataHealth";
 import { fileToCsv } from "@/lib/csv/toCsv";
+import Papa from "papaparse";
+import {
+  FIELD_SPECS,
+  suggestMapping,
+  applyMapping,
+  toCanonicalCsv,
+  mergeAiProposal,
+  type ImportKind,
+  type TargetField,
+} from "@/lib/csv/fieldMapping";
+import { suggestMappingWithAi } from "../mapping-actions";
 
 type UploadAction = (
   prev: UploadResult | null,
@@ -47,6 +58,7 @@ type CsvParser = (csv: string) => ParseResult<unknown>;
 
 type CardConfig = {
   step: number;
+  kind: ImportKind;
   action: UploadAction;
   parse: CsvParser;
   title: string;
@@ -61,6 +73,7 @@ type CardConfig = {
 const CARDS: CardConfig[] = [
   {
     step: 1,
+    kind: "vendors",
     action: uploadVendorsCsv,
     parse: parseVendorsCsv,
     title: "Vendors",
@@ -72,6 +85,7 @@ const CARDS: CardConfig[] = [
   },
   {
     step: 2,
+    kind: "bills",
     action: uploadBillsCsv,
     parse: parseBillsCsv,
     title: "Bills / payables",
@@ -85,6 +99,7 @@ const CARDS: CardConfig[] = [
   },
   {
     step: 3,
+    kind: "ims",
     action: uploadImsCsv,
     parse: parseImsCsv,
     title: "GST IMS invoices",
@@ -97,6 +112,7 @@ const CARDS: CardConfig[] = [
   },
   {
     step: 4,
+    kind: "rcm",
     action: uploadRcmCsv,
     parse: parseRcmCsv,
     title: "Reverse-charge purchases",
@@ -109,6 +125,7 @@ const CARDS: CardConfig[] = [
   },
   {
     step: 5,
+    kind: "compliance",
     action: uploadComplianceCsv,
     parse: parseComplianceCsv,
     title: "Compliance deadlines",
@@ -165,12 +182,14 @@ function PreviewPanel({
   fileName,
   onConfirm,
   onCancel,
+  onBack,
 }: {
   preview: ParseResult<unknown>;
   warnings: HealthWarning[];
   fileName: string | null;
   onConfirm: () => void;
   onCancel: () => void;
+  onBack?: () => void;
 }) {
   const rows = preview.valid as Record<string, unknown>[];
   const errors = preview.errors;
@@ -273,6 +292,11 @@ function PreviewPanel({
         <SubmitButton variant="solid" disabled={rows.length === 0} onClick={onConfirm}>
           Confirm import ({rows.length})
         </SubmitButton>
+        {onBack && (
+          <button type="button" onClick={onBack} className={`${BTN_BASE} ${BTN_GHOST}`}>
+            Back to column matching
+          </button>
+        )}
         <button type="button" onClick={onCancel} className={`${BTN_BASE} ${BTN_GHOST}`}>
           Choose a different file
         </button>
@@ -349,44 +373,256 @@ const HEALTH_BY_PARSER = new Map<
   [parseComplianceCsv, (r, a) => checkComplianceHealth(r as ComplianceDeadlineInput[], a)],
 ]);
 
+// Put a canonical CSV (headers = the app's field keys) into the form's file
+// input, so the confirm submit sends clean mapped data that the server's
+// existing validator independently re-checks — the mapping is a client
+// convenience, the server still validates every value.
+function setInputToCsv(input: HTMLInputElement, name: string, csv: string): void {
+  const file = new File([csv], name, { type: "text/csv" });
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+}
+
+// Column-matching step: shows which of the user's columns feeds each app field,
+// pre-filled by auto-detection. The user fixes any wrong guess, then continues.
+// Nothing is validated or saved from here — that happens after the preview.
+function MappingPanel({
+  fields,
+  headers,
+  sampleRow,
+  mapping,
+  onChange,
+  onContinue,
+  onCancel,
+  unmappedRequired,
+  aiFilled,
+  isAiBusy,
+}: {
+  fields: TargetField[];
+  headers: string[];
+  sampleRow: Record<string, string> | undefined;
+  mapping: Record<string, string | null>;
+  onChange: (fieldKey: string, header: string | null) => void;
+  onContinue: () => void;
+  onCancel: () => void;
+  unmappedRequired: string[];
+  aiFilled: string[];
+  isAiBusy: boolean;
+}) {
+  const isBlocked = unmappedRequired.length > 0;
+  const aiFilledSet = new Set(aiFilled);
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-2/60 p-3.5">
+      <div>
+        <p className="text-[12.5px] font-semibold text-fg">Match your columns</p>
+        <p className="mt-0.5 text-[11.5px] text-muted">
+          We guessed which of your columns feeds each field. Fix any that look
+          wrong, then continue. Nothing is saved yet.
+        </p>
+        {isAiBusy && (
+          <p className="mt-1 text-[11.5px] text-accent-text">
+            Asking AI to fill the gaps… (you can start matching now)
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
+        {fields.map((f) => {
+          const selected = mapping[f.key] ?? "";
+          const sampleVal = selected && sampleRow ? sampleRow[selected] ?? "" : "";
+          const isMissing = f.required && selected === "";
+          return (
+            <div key={f.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+              <label className="min-w-[8.5rem] flex-1 text-[12.5px] font-medium text-fg">
+                {f.label}
+                {f.required && <span className="ml-0.5 text-danger">*</span>}
+                {aiFilledSet.has(f.key) && (
+                  <span
+                    className="ml-1.5 rounded bg-accent-soft px-1 py-0.5 text-[9.5px] font-semibold tracking-wide text-accent-text uppercase"
+                    title="Suggested by AI, please check this one"
+                  >
+                    AI
+                  </span>
+                )}
+              </label>
+              <select
+                value={selected}
+                onChange={(e) =>
+                  onChange(f.key, e.target.value === "" ? null : e.target.value)
+                }
+                className={`min-w-[10rem] flex-1 rounded-lg border bg-surface px-2 py-1.5 text-[12px] text-fg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+                  isMissing ? "border-danger/60" : "border-border-strong"
+                }`}
+              >
+                <option value="">{f.required ? "Pick a column…" : "Skip this field"}</option>
+                {headers.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="min-w-[5rem] flex-1 truncate text-[11px] text-faint"
+                title={sampleVal}
+              >
+                {sampleVal ? `e.g. ${sampleVal}` : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {isBlocked && (
+        <div className="rounded-lg bg-warning-soft px-3 py-2 text-[11.5px] text-warning">
+          Pick a column for every required field (marked{" "}
+          <span className="text-danger">*</span>) to continue.
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          disabled={isBlocked}
+          onClick={onContinue}
+          className={`${BTN_BASE} ${BTN_SOLID}`}
+        >
+          Continue to preview
+        </button>
+        <button type="button" onClick={onCancel} className={`${BTN_BASE} ${BTN_GHOST}`}>
+          Choose a different file
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type RawTable = { headers: string[]; rows: Record<string, string>[] };
+
+// Whether to consult the optional AI mapping layer at all. Non-secret, so it can
+// be a public flag: with it off (the default) the client never calls the AI
+// action, so imports behave exactly as the deterministic-only flow — no round
+// trip, no "asking AI" hint. The server independently re-checks that a key is
+// actually configured, so this flag can never force AI on by itself.
+const IS_AI_MAPPING_ENABLED = process.env.NEXT_PUBLIC_AI_MAPPING_ENABLED === "1";
+
 function UploadCard({ card }: { card: CardConfig }) {
+  const fields = FIELD_SPECS[card.kind];
   const [result, formAction, isPending] = useActionState(card.action, null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [submittedName, setSubmittedName] = useState<string | null>(null);
+  const [readError, setReadError] = useState<string | null>(null);
+  const [raw, setRaw] = useState<RawTable | null>(null);
+  const [mapping, setMapping] = useState<Record<string, string | null> | null>(null);
   const [preview, setPreview] = useState<ParseResult<unknown> | null>(null);
+  const [stage, setStage] = useState<"drop" | "mapping" | "preview">("drop");
   const [dragOver, setDragOver] = useState(false);
+  const [aiFilled, setAiFilled] = useState<string[]>([]);
+  const [isAiBusy, setIsAiBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Guards for the async AI pre-fill: never apply a reply for a superseded file,
+  // and never overwrite a mapping the user has already touched.
+  const requestIdRef = useRef(0);
+  const userEditedRef = useRef(false);
   const inputId = `import-file-${card.step}`;
 
   async function acceptFile(file: File | undefined) {
     if (!file) return;
-    if (inputRef.current) {
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      inputRef.current.files = dt.files;
-    }
+    const requestId = ++requestIdRef.current;
+    userEditedRef.current = false;
     setFileName(file.name);
     setSubmittedName(null); // invalidate any previous result
+    setReadError(null);
+    setPreview(null);
+    setAiFilled([]);
     try {
-      // Same normalizer the server uses — CSV/TSV/Excel/ODS all become the CSV
-      // text the parsers expect, so the preview matches exactly what will save.
+      // Normalize any file type (CSV/TSV/Excel/ODS) to CSV text, then parse to
+      // rows keyed by the file's OWN headers — any names, any order.
       const read = await fileToCsv(file);
       if (!read.ok) {
-        setPreview({ valid: [], errors: [{ row: 0, message: read.message }] });
+        setReadError(read.message);
         return;
       }
-      setPreview(card.parse(read.csv));
+      const parsed = Papa.parse<Record<string, string>>(read.csv, {
+        header: true,
+        skipEmptyLines: "greedy",
+        transformHeader: (h) => h.trim(),
+      });
+      const headers = (parsed.meta.fields ?? []).filter((h) => h !== "");
+      const rows = parsed.data;
+      if (headers.length === 0 || rows.length === 0) {
+        setReadError("No rows found. Check the file has a header row with data below it.");
+        return;
+      }
+      // Deterministic matching first — this is the floor, and it needs no AI.
+      const detected = suggestMapping(headers, fields).mapping;
+      setRaw({ headers, rows });
+      setMapping(detected);
+      setStage("mapping");
+
+      // Optional AI pass fills only what detection missed. Skipped entirely when
+      // disabled, so the default path makes no extra request at all; any failure
+      // leaves the deterministic mapping exactly as-is.
+      if (!IS_AI_MAPPING_ENABLED) return;
+      setIsAiBusy(true);
+      try {
+        const proposal = await suggestMappingWithAi(card.kind, headers, rows.slice(0, 2));
+        const isStale = requestId !== requestIdRef.current || userEditedRef.current;
+        if (!isStale && proposal.mapping) {
+          const merged = mergeAiProposal(detected, proposal.mapping, fields);
+          setMapping(merged.mapping);
+          setAiFilled(merged.aiFilled);
+        }
+      } catch {
+        // AI is best-effort; the deterministic mapping stands.
+      } finally {
+        if (requestId === requestIdRef.current) setIsAiBusy(false);
+      }
     } catch {
-      setPreview({ valid: [], errors: [{ row: 0, message: "Could not read this file." }] });
+      setReadError("Could not read this file.");
     }
   }
 
+  function changeMapping(fieldKey: string, header: string | null) {
+    userEditedRef.current = true;
+    setMapping((prev) => {
+      const next = { ...(prev ?? {}) };
+      // A source column feeds only one field — clear it from any other field first.
+      if (header) {
+        for (const k of Object.keys(next)) if (next[k] === header) next[k] = null;
+      }
+      next[fieldKey] = header;
+      return next;
+    });
+  }
+
+  function continueToPreview() {
+    if (!raw || !mapping || !inputRef.current) return;
+    const canonicalRows = applyMapping(raw.rows, mapping, fields);
+    const csv = toCanonicalCsv(canonicalRows, fields);
+    setInputToCsv(inputRef.current, `${card.kind}-mapped.csv`, csv);
+    setPreview(card.parse(csv));
+    setStage("preview");
+  }
+
   function reset() {
+    requestIdRef.current += 1; // discard any AI reply still in flight
+    userEditedRef.current = false;
+    setStage("drop");
+    setReadError(null);
+    setRaw(null);
+    setMapping(null);
     setPreview(null);
     setFileName(null);
     setSubmittedName(null);
+    setAiFilled([]);
+    setIsAiBusy(false);
     if (inputRef.current) inputRef.current.value = "";
   }
+
+  const unmappedRequired = mapping
+    ? fields.filter((f) => f.required && !mapping[f.key]).map((f) => f.key)
+    : [];
 
   // `result` is inlined (not hoisted to a bool) so TS narrows it to non-null below.
   const committed = !isPending && submittedName !== null && submittedName === fileName;
@@ -437,38 +673,57 @@ function UploadCard({ card }: { card: CardConfig }) {
 
       {committed && result !== null ? (
         <ResultPanel result={result} card={card} onReset={reset} />
-      ) : preview ? (
+      ) : stage === "preview" && preview ? (
         <PreviewPanel
           preview={preview}
           warnings={HEALTH_BY_PARSER.get(card.parse)?.(preview.valid, todayIso()) ?? []}
           fileName={fileName}
           onConfirm={() => setSubmittedName(fileName)}
           onCancel={reset}
+          onBack={() => setStage("mapping")}
+        />
+      ) : stage === "mapping" && raw && mapping ? (
+        <MappingPanel
+          fields={fields}
+          headers={raw.headers}
+          sampleRow={raw.rows[0]}
+          mapping={mapping}
+          onChange={changeMapping}
+          onContinue={continueToPreview}
+          onCancel={reset}
+          unmappedRequired={unmappedRequired}
+          aiFilled={aiFilled}
+          isAiBusy={isAiBusy}
         />
       ) : (
-        <label
-          htmlFor={inputId}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            void acceptFile(e.dataTransfer.files?.[0]);
-          }}
-          className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-5 text-center transition-colors ${
-            dragOver ? "border-accent bg-accent-soft" : "border-border-strong hover:bg-surface-2"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="size-5 text-faint" aria-hidden>
-            <path d="M12 16V4m0 0L8 8m4-4 4 4" />
-            <path d="M4 20h16" />
-          </svg>
-          <span className="text-[13px] font-medium text-fg">Drop your file here, or click to browse</span>
-          <span className="text-[11px] text-faint">CSV or Excel (.csv, .xlsx, .xls, .ods) · you&apos;ll preview it before anything is saved</span>
-        </label>
+        <>
+          <label
+            htmlFor={inputId}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              void acceptFile(e.dataTransfer.files?.[0]);
+            }}
+            className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-5 text-center transition-colors ${
+              dragOver ? "border-accent bg-accent-soft" : "border-border-strong hover:bg-surface-2"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" className="size-5 text-faint" aria-hidden>
+              <path d="M12 16V4m0 0L8 8m4-4 4 4" />
+              <path d="M4 20h16" />
+            </svg>
+            <span className="text-[13px] font-medium text-fg">Drop your file here, or click to browse</span>
+            <span className="text-[11px] text-faint">Any layout works. CSV or Excel (.csv, .xlsx, .xls, .ods), and we match your columns next.</span>
+          </label>
+          {readError && (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-[12px] text-danger">{readError}</p>
+          )}
+        </>
       )}
     </form>
   );
@@ -478,11 +733,11 @@ function HowItWorks() {
   const steps = [
     {
       t: "1 · You add your data",
-      d: "Export a CSV from Tally, Zoho, or Excel (or load our demo). Each card below has a matching sample file.",
+      d: "Upload a CSV or Excel export from any software (Tally, Zoho, your billing system), with any column names or order. Or load our demo to see it working.",
     },
     {
-      t: "2 · You preview, then confirm",
-      d: "The moment you pick a file we show exactly what will be imported (how many rows, and which have errors) before anything is saved. You confirm, and nothing is written until you do.",
+      t: "2 · We match your columns, you confirm",
+      d: "We auto-detect which of your columns is which; you fix anything that looks off, then preview exactly what will be imported. Nothing is saved until you confirm.",
     },
     {
       t: "3 · Rules flag your money at risk",
@@ -501,11 +756,13 @@ function HowItWorks() {
         ))}
       </ol>
       <div className="rounded-xl bg-surface-2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
-        <span className="font-semibold text-fg">Is an AI reading my files?</span> No. Your data is
-        analysed by fixed, published tax rules, not an AI that guesses. That is deliberate: a
-        money-safety tool has to be auditable, so every figure traces back to a rule and a legal
-        section you (or your CA) can check. Your files are parsed and stored privately; they are
-        never sent to a third party or used to train anything.
+        <span className="font-semibold text-fg">Does an AI see my data?</span> Only to suggest
+        column matches, and only that far: when you upload, your column names and up to two sample
+        rows may be sent to an AI so it can propose which column is which. It only suggests. Nothing
+        is calculated or saved until you review and confirm, and anything it gets wrong you simply
+        change. Every money figure is computed by fixed, published tax rules, never by an AI, so each
+        one still traces back to a rule and a legal section you (or your CA) can check. Your files
+        are stored privately and are never used to train anything.
       </div>
     </section>
   );
