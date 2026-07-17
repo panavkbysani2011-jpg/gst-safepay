@@ -95,7 +95,7 @@ const CARDS: CardConfig[] = [
       "id, vendorId, invoiceAcceptanceDate, amount, hasWrittenAgreement, agreedPaymentDays, paidDate",
     viewHref: "/payments",
     viewLabel: "View payments",
-    note: "Each row's vendorId must match a vendor id you uploaded in step 1. Mismatches are skipped when you confirm.",
+    note: "Your vendor column can be an id, a supplier name, or a GSTIN. We match it to an existing vendor, and add any supplier we haven't seen so no row is dropped. You can upload this first if you like.",
   },
   {
     step: 3,

@@ -74,12 +74,19 @@ export type VendorInput = z.infer<typeof VendorSchema>;
 
 const BillSchema = z.object({
   id: z.string().min(1),
+  /** Whatever the file identifies the supplier by: our id, a GSTIN, or a name.
+   *  Resolved to a real vendor id on import (see lib/csv/vendorLink.ts). */
   vendorId: z.string().min(1),
   invoiceAcceptanceDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD"),
   amount: z.number().finite().nonnegative(),
   hasWrittenAgreement: z.boolean(),
   agreedPaymentDays: z.number().int().positive().nullable(),
   paidDate: z.string().regex(ISO_DATE, "expected YYYY-MM-DD").nullable(),
+  // Transient: not columns on Bill. Purchase registers usually carry the
+  // supplier's name/GSTIN, so accept them to link (or seed) the vendor
+  // accurately. Optional, and dropped before the bill row is written.
+  vendorName: z.string().nullable().optional(),
+  vendorGstin: z.string().nullable().optional(),
 });
 
 export type BillInput = z.infer<typeof BillSchema>;
@@ -201,6 +208,8 @@ export function parseBillsCsv(csv: string): ParseResult<BillInput> {
       hasWrittenAgreement: coerceBoolean(raw.hasWrittenAgreement, true),
       agreedPaymentDays,
       paidDate: emptyToNull(raw.paidDate),
+      vendorName: emptyToNull(raw.vendorName),
+      vendorGstin: emptyToNull(raw.vendorGstin),
     });
   });
 }

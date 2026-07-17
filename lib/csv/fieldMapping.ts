@@ -45,12 +45,16 @@ export const FIELD_SPECS: Record<ImportKind, TargetField[]> = {
   ],
   bills: [
     { key: "id", label: "Bill / invoice no.", required: true, type: "string", aliases: ["id", "billno", "billnumber", "invoiceno", "invoicenumber", "voucherno", "docno", "documentno", "billid"] },
-    { key: "vendorId", label: "Vendor ID / code", required: true, type: "string", aliases: ["vendorid", "vendorcode", "vendor", "supplier", "supplierid", "party", "partycode", "partyname", "suppliercode", "manufacturer", "ledgercode"] },
+    { key: "vendorId", label: "Vendor (id, name or GSTIN)", required: true, type: "string", aliases: ["vendorid", "vendorcode", "vendor", "supplier", "supplierid", "party", "partycode", "partyname", "suppliercode", "manufacturer", "ledgercode"] },
     { key: "invoiceAcceptanceDate", label: "Invoice / bill date", required: true, type: "date", aliases: ["invoiceacceptancedate", "invoicedate", "billdate", "date", "docdate", "documentdate", "voucherdate", "acceptancedate", "grndate"] },
     { key: "amount", label: "Amount", required: true, type: "number", aliases: ["amount", "invoiceamount", "billamount", "value", "invoicevalue", "netamount", "total", "totalamount", "taxablevalue", "grossamount", "billedamount"] },
     { key: "hasWrittenAgreement", label: "Written agreement?", required: false, type: "boolean", aliases: ["haswrittenagreement", "writtenagreement", "agreement", "hasagreement", "contract"] },
     { key: "agreedPaymentDays", label: "Agreed payment term (days)", required: false, type: "number", aliases: ["agreedpaymentdays", "paymentdays", "creditdays", "creditperiod", "terms", "paymentterms", "duedays"] },
     { key: "paidDate", label: "Paid date", required: false, type: "date", aliases: ["paiddate", "paymentdate", "settleddate", "clearingdate", "paidon"] },
+    // Optional, and only used to link (or create) the vendor accurately — these
+    // are not stored on the bill itself.
+    { key: "vendorName", label: "Vendor name (to match/create)", required: false, type: "string", aliases: ["vendorname", "suppliername", "partyname", "manufacturer", "companyname"] },
+    { key: "vendorGstin", label: "Vendor GSTIN (to match/create)", required: false, type: "string", aliases: ["vendorgstin", "suppliergstin", "partygstin", "gstin", "gstno", "gstinno"] },
   ],
   ims: [
     { key: "id", label: "Record ID", required: true, type: "string", aliases: ["id", "invoiceid", "recordid", "srno", "slno", "serialno"] },
