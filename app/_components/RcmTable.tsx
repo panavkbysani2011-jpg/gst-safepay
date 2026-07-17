@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { formatINR, formatDate } from "@/lib/format";
 import type {
   RcmPaymentStatus,
@@ -11,6 +11,12 @@ import type {
 import type { RcmCfg } from "@/lib/rules/ruleConfig";
 import { DetailDrawer } from "./DetailDrawer";
 import { TONE_BADGE, type Tone } from "./tone";
+import {
+  setRcmSelfInvoice,
+  setRcmTaxPaid,
+  deleteRcmPurchase,
+  type RcmActionResult,
+} from "@/app/rcm-actions";
 
 export type RcmRowView = {
   purchaseId: string;
@@ -110,7 +116,30 @@ function buildSteps(r: RcmRowView, config: RcmCfg): Step[] {
 
 export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summary: RcmSummary; config: RcmCfg }) {
   const [selected, setSelected] = useState<RcmRowView | null>(null);
+  const [armedDelete, setArmedDelete] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [busy, startTransition] = useTransition();
   const exposure = summary.totalInterestExposure + summary.totalPenaltyExposure;
+
+  // Reset the delete arm / message when a different purchase is opened, adjusted
+  // during render so the drawer never shows a frame armed for the previous row.
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
+    setArmedDelete(false);
+    setActionMsg(null);
+  }
+
+  // Server data revalidates on success; the drawer is a client snapshot, so
+  // close it and let the refreshed table show the new status.
+  function runAction(fn: () => Promise<RcmActionResult>) {
+    setActionMsg(null);
+    startTransition(async () => {
+      const r = await fn();
+      if (r.ok) setSelected(null);
+      else setActionMsg(r.message);
+    });
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
@@ -240,6 +269,79 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
                 </p>
               </div>
             )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              {(() => {
+                const isSelfIssued = selected.selfInvoiceStatus === "issued";
+                const isTaxPaid =
+                  selected.rcmPaymentStatus === "paid-on-time" ||
+                  selected.rcmPaymentStatus === "paid-late";
+                const base =
+                  "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60";
+                const active = "bg-accent text-accent-fg font-semibold hover:brightness-110";
+                const idle = "border border-border-strong bg-surface text-fg hover:bg-surface-2";
+                const check = (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                );
+                return (
+                  <>
+                    {selected.selfInvoiceApplicable && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={isSelfIssued}
+                        onClick={() => runAction(() => setRcmSelfInvoice(selected.purchaseId, !isSelfIssued))}
+                        className={`${base} ${isSelfIssued ? active : idle}`}
+                      >
+                        {isSelfIssued && check}
+                        Self-invoice issued
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={isTaxPaid}
+                      onClick={() => runAction(() => setRcmTaxPaid(selected.purchaseId, !isTaxPaid))}
+                      className={`${base} ${isTaxPaid ? active : idle}`}
+                    >
+                      {isTaxPaid && check}
+                      RCM tax paid
+                    </button>
+                  </>
+                );
+              })()}
+
+              {armedDelete ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => runAction(() => deleteRcmPurchase(selected.purchaseId))}
+                    disabled={busy}
+                    className="inline-flex h-9 items-center rounded-lg bg-danger px-3 text-[13px] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                  >
+                    {busy ? "Deleting…" : "Confirm delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArmedDelete(false)}
+                    className="inline-flex h-9 items-center rounded-lg border border-border-strong px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setArmedDelete(true)}
+                  className="ml-auto inline-flex h-9 items-center rounded-lg border border-danger/50 px-3 text-[13px] font-medium text-danger transition-colors hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  Delete
+                </button>
+              )}
+              {actionMsg && <span className="w-full text-[12px] text-danger">{actionMsg}</span>}
+            </div>
 
             <div>
               <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted uppercase">
