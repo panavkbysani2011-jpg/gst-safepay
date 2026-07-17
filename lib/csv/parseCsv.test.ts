@@ -100,6 +100,9 @@ describe("parseBillsCsv", () => {
       hasWrittenAgreement: true,
       agreedPaymentDays: 45,
       paidDate: null,
+      // Optional vendor link hints: absent from this file, so null.
+      vendorName: null,
+      vendorGstin: null,
     });
     expect(result.valid[1].agreedPaymentDays).toBeNull();
     expect(result.valid[1].paidDate).toBe("2026-06-01");
