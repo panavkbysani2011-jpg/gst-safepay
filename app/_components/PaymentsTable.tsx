@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { formatINR, formatDate, subtractDaysIso } from "@/lib/format";
 import type { PaymentCfg } from "@/lib/rules/ruleConfig";
 import type { RankedRisk } from "@/lib/data/dashboard";
 import { StatusBadge } from "./StatusBadge";
 import { DetailDrawer } from "./DetailDrawer";
+import {
+  markBillPaid,
+  markBillUnpaid,
+  deleteBill,
+  type BillActionResult,
+} from "@/app/bill-actions";
+
+function isPaid(status: RankedRisk["status"]): boolean {
+  return status === "paid-on-time" || status === "paid-late";
+}
 
 function daysLabel(daysRemaining: number | null): string {
   if (daysRemaining === null) return "—";
@@ -73,6 +83,30 @@ function buildSteps(r: RankedRisk, config: PaymentCfg): Step[] {
 export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: PaymentCfg }) {
   const [selected, setSelected] = useState<RankedRisk | null>(null);
   const [compact, setCompact] = useState(false);
+  const [armedDelete, setArmedDelete] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [busy, startTransition] = useTransition();
+
+  // Reset the delete arm and any message whenever a different bill is opened,
+  // adjusted during render (React's "state derived from a prop" pattern) so the
+  // drawer never shows one frame armed to act on the previously selected bill.
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
+    setArmedDelete(false);
+    setActionMsg(null);
+  }
+
+  // On success the server data is revalidated; the drawer holds a client
+  // snapshot, so close it and let the refreshed table show the new state.
+  function runAction(fn: () => Promise<BillActionResult>) {
+    setActionMsg(null);
+    startTransition(async () => {
+      const r = await fn();
+      if (r.ok) setSelected(null);
+      else setActionMsg(r.message);
+    });
+  }
 
   const rowPad = compact ? "py-2" : "py-3";
 
@@ -194,6 +228,60 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
                 <p className="mt-1 text-[13px] text-fg">{daysLabel(selected.daysRemaining)} on this bill.</p>
               </div>
             )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isPaid(selected.status) ? (
+                <button
+                  type="button"
+                  onClick={() => runAction(() => markBillUnpaid(selected.billId))}
+                  disabled={busy}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                >
+                  {busy ? "Working…" : "Mark unpaid"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => runAction(() => markBillPaid(selected.billId))}
+                  disabled={busy}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-semibold text-accent-fg transition-[filter] duration-150 hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  {busy ? "Working…" : "Mark paid"}
+                </button>
+              )}
+
+              {armedDelete ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => runAction(() => deleteBill(selected.billId))}
+                    disabled={busy}
+                    className="inline-flex h-9 items-center rounded-lg bg-danger px-3 text-[13px] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                  >
+                    {busy ? "Deleting…" : "Confirm delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArmedDelete(false)}
+                    className="inline-flex h-9 items-center rounded-lg border border-border-strong px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setArmedDelete(true)}
+                  className="inline-flex h-9 items-center rounded-lg border border-danger/50 px-3 text-[13px] font-medium text-danger transition-colors hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  Delete
+                </button>
+              )}
+              {actionMsg && <span className="text-[12px] text-danger">{actionMsg}</span>}
+            </div>
 
             <div>
               <p className="mb-1 text-[11px] font-semibold tracking-[0.1em] text-muted uppercase">
