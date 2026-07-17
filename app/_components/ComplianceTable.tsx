@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { formatDate } from "@/lib/format";
 import type { ComplianceStatus, ComplianceSummary } from "@/lib/rules/types";
 import { DetailDrawer } from "./DetailDrawer";
 import { ComplianceProof } from "./ComplianceProof";
 import { TONE_BADGE, type Tone } from "./tone";
+import {
+  markComplianceFiled,
+  markComplianceUnfiled,
+  deleteComplianceDeadline,
+  type ProofResult,
+} from "@/app/compliance-actions";
 
 export type ComplianceRowView = {
   deadlineId: string;
@@ -85,6 +91,29 @@ export function ComplianceTable({
   summary: ComplianceSummary;
 }) {
   const [selected, setSelected] = useState<ComplianceRowView | null>(null);
+  const [armedDelete, setArmedDelete] = useState(false);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [busy, startTransition] = useTransition();
+
+  // Reset the delete arm / message when a different filing is opened, adjusted
+  // during render so the drawer never shows a frame armed for the previous row.
+  const [prevSelected, setPrevSelected] = useState(selected);
+  if (selected !== prevSelected) {
+    setPrevSelected(selected);
+    setArmedDelete(false);
+    setActionMsg(null);
+  }
+
+  // Server data revalidates on success; the drawer is a client snapshot, so
+  // close it and let the refreshed table show the new status.
+  function runAction(fn: () => Promise<ProofResult>) {
+    setActionMsg(null);
+    startTransition(async () => {
+      const r = await fn();
+      if (r.ok) setSelected(null);
+      else setActionMsg(r.message);
+    });
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow)]">
@@ -247,6 +276,61 @@ export function ComplianceTable({
                   </div>
                 ))}
               </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {selected.status === "filed" ? (
+                <button
+                  type="button"
+                  onClick={() => runAction(() => markComplianceUnfiled(selected.deadlineId))}
+                  disabled={busy}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                >
+                  {busy ? "Working…" : "Mark unfiled"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => runAction(() => markComplianceFiled(selected.deadlineId))}
+                  disabled={busy}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-semibold text-accent-fg transition-[filter] duration-150 hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-60"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="size-4" aria-hidden>
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  {busy ? "Working…" : "Mark filed"}
+                </button>
+              )}
+
+              {armedDelete ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => runAction(() => deleteComplianceDeadline(selected.deadlineId))}
+                    disabled={busy}
+                    className="inline-flex h-9 items-center rounded-lg bg-danger px-3 text-[13px] font-semibold text-white transition-[filter] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
+                  >
+                    {busy ? "Deleting…" : "Confirm delete"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArmedDelete(false)}
+                    className="inline-flex h-9 items-center rounded-lg border border-border-strong px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    Cancel
+                  </button>
+                  <span className="text-[11.5px] text-muted">Also removes any proof file.</span>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setArmedDelete(true)}
+                  className="inline-flex h-9 items-center rounded-lg border border-danger/50 px-3 text-[13px] font-medium text-danger transition-colors hover:bg-danger-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                >
+                  Delete
+                </button>
+              )}
+              {actionMsg && <span className="text-[12px] text-danger">{actionMsg}</span>}
             </div>
 
             <div className="border-t border-border pt-4">
