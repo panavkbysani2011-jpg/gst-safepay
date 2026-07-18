@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   // Only allow same-origin relative redirects — never an attacker-supplied absolute URL.
   const rawNext = url.searchParams.get("next");
   const next =
-    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+    rawNext?.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
 
   // Behind a proxy (Vercel) trust the forwarded host so the redirect keeps the public domain.
   const forwardedHost = request.headers.get("x-forwarded-host");

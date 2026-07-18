@@ -239,7 +239,7 @@ export function toNumberLoose(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   const s = String(value)
     .trim()
-    .replace(/[₹$,\s]/g, "")
+    .replace(/[₹$,\s]/gu, "")
     .replace(/^\+/, "");
   if (s === "") return null;
   const n = Number(s);

@@ -45,9 +45,20 @@ export async function proxy(request: NextRequest) {
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
+  // Asserted rather than `!`-suppressed: if these are missing the app cannot
+  // authenticate anyone, and a clear failure here beats a confusing one deeper in
+  // the Supabase client on every single request.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "Supabase environment variables are not configured (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY)."
+    );
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
