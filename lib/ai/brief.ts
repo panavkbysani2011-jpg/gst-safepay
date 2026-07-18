@@ -24,7 +24,11 @@ import { formatINR } from "@/lib/format";
 import { collectAllowedNumbers, findUnsupportedNumbers } from "./numberGuard";
 
 const DEFAULT_ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions";
-const DEFAULT_MODEL = "moonshotai/kimi-k2.6";
+// A model available on every standard NVIDIA build account. Some models (e.g.
+// moonshotai/kimi-k2.6) 404 with "not found for account" unless specially
+// provisioned; Llama 3.3 70B is universally accessible. Override with
+// AI_MAPPING_MODEL if you have access to something else.
+const DEFAULT_MODEL = "meta/llama-3.3-70b-instruct";
 // Kimi K2 and similarly large models on NVIDIA's shared endpoint can take 15-30s
 // to respond. The brief streams behind Suspense so this never blocks the rest of
 // the dashboard; a generous cap just lets a slow model finish instead of aborting.
