@@ -11,6 +11,7 @@ import type {
 import type { RcmCfg } from "@/lib/rules/ruleConfig";
 import { DetailDrawer } from "./DetailDrawer";
 import { TONE_BADGE, type Tone } from "./tone";
+import { Term } from "./Term";
 import {
   setRcmSelfInvoice,
   setRcmTaxPaid,
@@ -147,7 +148,10 @@ export function RcmTable({ rows, summary, config }: { rows: RcmRowView[]; summar
         <h2 className="font-display text-[15px] font-semibold text-fg">
           Reverse-charge watch
         </h2>
-        <span className="text-xs text-muted">self-invoice (Rule 47A) & cash-GST deadlines</span>
+        <span className="text-xs text-muted">
+          <Term name="selfInvoice">self-invoice</Term> (
+          <Term name="rule47a">Rule 47A</Term>) &amp; cash-GST deadlines
+        </span>
         <div className="ml-auto flex items-center gap-2 text-[11.5px]">
           <span className="tnum font-mono font-semibold text-danger">{formatINR(exposure)}</span>
           <span className="text-muted">interest + penalty exposure</span>

@@ -5,6 +5,7 @@ import { formatINR, formatDate } from "@/lib/format";
 import type { ImsStatus, ImsCloseSummary } from "@/lib/rules/types";
 import { DetailDrawer } from "./DetailDrawer";
 import { TONE_BADGE, type Tone } from "./tone";
+import { Term } from "./Term";
 import {
   setImsAction,
   deleteImsInvoice,
@@ -101,15 +102,22 @@ export function ImsTable({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-border px-5 py-3.5">
         <h2 className="font-display text-[15px] font-semibold text-fg">GST IMS monthly close</h2>
         <span className="text-xs text-muted">
-          {summary.nextCutoffDate
-            ? `next GSTR-2B cutoff ${formatDate(summary.nextCutoffDate)}`
-            : "no open cutoff"}
+          {summary.nextCutoffDate ? (
+            <>
+              next <Term name="gstr2b">GSTR-2B</Term> cutoff{" "}
+              {formatDate(summary.nextCutoffDate)}
+            </>
+          ) : (
+            "no open cutoff"
+          )}
         </span>
         <div className="ml-auto flex items-center gap-2 text-[11.5px]">
           <span className="tnum font-mono font-semibold text-warning">
             {formatINR(summary.totalItcAtRisk)}
           </span>
-          <span className="text-muted">ITC at risk</span>
+          <span className="text-muted">
+            <Term name="itc">ITC</Term> at risk
+          </span>
         </div>
       </div>
 
