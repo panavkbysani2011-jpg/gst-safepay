@@ -25,7 +25,10 @@ import { collectAllowedNumbers, findUnsupportedNumbers } from "./numberGuard";
 
 const DEFAULT_ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions";
 const DEFAULT_MODEL = "moonshotai/kimi-k2.6";
-const TIMEOUT_MS = 12_000;
+// Kimi K2 and similarly large models on NVIDIA's shared endpoint can take 15-30s
+// to respond. The brief streams behind Suspense so this never blocks the rest of
+// the dashboard; a generous cap just lets a slow model finish instead of aborting.
+const TIMEOUT_MS = 35_000;
 /** Enough to characterise the situation; more is just cost and exposure. */
 const MAX_ITEMS = 5;
 const MAX_BRIEF_CHARS = 700;
@@ -156,7 +159,7 @@ export async function generateBrief(
         messages: [{ role: "user", content: buildPrompt(facts) }],
         temperature: 0,
         top_p: 1,
-        max_tokens: 400,
+        max_tokens: 1024,
         stream: false,
       }),
       signal: controller.signal,
