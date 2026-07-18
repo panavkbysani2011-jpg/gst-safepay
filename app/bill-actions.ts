@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { rateLimit, retryPhrase } from "@/lib/rate-limit";
 import { todayInBusinessZone } from "@/lib/businessDate";
+import { parseBillForm, billFormFromEntries } from "@/lib/billForm";
 
 export type BillActionResult = { ok: boolean; message: string };
 
@@ -32,6 +33,53 @@ async function guard(): Promise<
     };
   }
   return { ok: true, userId: user.id };
+}
+
+/**
+ * Create or update a bill, owner-scoped and validated. This is the correction
+ * path: before it existed, a bill imported with a wrong amount or date had to be
+ * deleted and re-imported. The supplier is re-checked against the caller's own
+ * vendor list, so a tampered form cannot attach a bill to someone else's vendor.
+ */
+export async function saveBill(
+  _prev: BillActionResult | null,
+  formData: FormData
+): Promise<BillActionResult> {
+  const g = await guard();
+  if (!g.ok) return g.result;
+
+  const parsed = parseBillForm(
+    billFormFromEntries((k) => {
+      const v = formData.get(k);
+      return typeof v === "string" ? v : null;
+    })
+  );
+  if (!parsed.ok) return { ok: false, message: parsed.message };
+  const v = parsed.value;
+
+  // Authorization: the vendor must belong to this owner.
+  const vendor = await db.vendor.findUnique({
+    where: { ownerId_id: { ownerId: g.userId, id: v.vendorId } },
+  });
+  if (!vendor) return { ok: false, message: "That supplier is not in your vendor list." };
+
+  const id = v.id ?? crypto.randomUUID();
+  const fields = {
+    vendorId: v.vendorId,
+    invoiceAcceptanceDate: v.invoiceAcceptanceDate,
+    amount: v.amount,
+    hasWrittenAgreement: v.hasWrittenAgreement,
+    agreedPaymentDays: v.agreedPaymentDays,
+    paidDate: v.paidDate,
+  };
+  await db.bill.upsert({
+    where: { ownerId_id: { ownerId: g.userId, id } },
+    create: { ownerId: g.userId, id, ...fields },
+    update: fields,
+  });
+
+  revalidateBillViews();
+  return { ok: true, message: v.id ? "Bill updated." : "Bill added." };
 }
 
 /**

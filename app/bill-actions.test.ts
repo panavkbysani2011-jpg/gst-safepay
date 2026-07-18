@@ -11,10 +11,13 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 vi.mock("@/lib/businessDate", () => ({ todayInBusinessZone: () => "2026-07-17" }));
 vi.mock("@/lib/db", () => ({
-  db: { bill: { update: vi.fn(), delete: vi.fn() } },
+  db: {
+    bill: { update: vi.fn(), delete: vi.fn(), upsert: vi.fn() },
+    vendor: { findUnique: vi.fn() },
+  },
 }));
 
-import { markBillPaid, markBillUnpaid, deleteBill } from "./bill-actions";
+import { markBillPaid, markBillUnpaid, deleteBill, saveBill } from "./bill-actions";
 import { requireUser } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { db } from "@/lib/db";
@@ -23,6 +26,8 @@ const mockRequireUser = vi.mocked(requireUser);
 const mockRateLimit = vi.mocked(rateLimit);
 const mockUpdate = vi.mocked(db.bill.update);
 const mockDelete = vi.mocked(db.bill.delete);
+const mockUpsert = vi.mocked(db.bill.upsert);
+const mockVendorFind = vi.mocked(db.vendor.findUnique);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -92,5 +97,55 @@ describe("deleteBill", () => {
     mockDelete.mockRejectedValue(new Error("record not found"));
     const r = await deleteBill("b1");
     expect(r).toEqual({ ok: false, message: "That bill no longer exists." });
+  });
+});
+
+function billForm(over: Record<string, string> = {}): FormData {
+  const fd = new FormData();
+  const base: Record<string, string> = {
+    vendorId: "v1",
+    invoiceAcceptanceDate: "2026-06-15",
+    amount: "100000",
+    hasWrittenAgreement: "on",
+    ...over,
+  };
+  for (const [k, v] of Object.entries(base)) fd.set(k, v);
+  return fd;
+}
+
+describe("saveBill", () => {
+  it("creates a bill scoped to the owner", async () => {
+    mockVendorFind.mockResolvedValue({ id: "v1" } as never);
+    mockUpsert.mockResolvedValue({} as never);
+    const r = await saveBill(null, billForm());
+    expect(r.ok).toBe(true);
+    const arg = mockUpsert.mock.calls[0][0] as {
+      where: { ownerId_id: { ownerId: string } };
+      update: { amount: number; invoiceAcceptanceDate: string };
+    };
+    expect(arg.where.ownerId_id.ownerId).toBe("u1");
+    expect(arg.update.amount).toBe(100000);
+    expect(arg.update.invoiceAcceptanceDate).toBe("2026-06-15");
+  });
+
+  it("REFUSES a supplier that is not the caller's, and writes nothing", async () => {
+    mockVendorFind.mockResolvedValue(null);
+    const r = await saveBill(null, billForm({ vendorId: "someone-elses-vendor" }));
+    expect(r.ok).toBe(false);
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid form without touching the DB", async () => {
+    mockVendorFind.mockResolvedValue({ id: "v1" } as never);
+    const r = await saveBill(null, billForm({ amount: "" }));
+    expect(r.ok).toBe(false);
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a paid date before the bill date", async () => {
+    mockVendorFind.mockResolvedValue({ id: "v1" } as never);
+    const r = await saveBill(null, billForm({ paidDate: "2026-01-01" }));
+    expect(r.ok).toBe(false);
+    expect(mockUpsert).not.toHaveBeenCalled();
   });
 });

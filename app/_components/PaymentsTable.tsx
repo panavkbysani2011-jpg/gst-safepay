@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import { formatINR, formatDate, subtractDaysIso } from "@/lib/format";
 import type { PaymentCfg } from "@/lib/rules/ruleConfig";
-import type { RankedRisk } from "@/lib/data/dashboard";
+import type { RankedRisk, VendorOption } from "@/lib/data/dashboard";
 import { StatusBadge } from "./StatusBadge";
 import { DetailDrawer } from "./DetailDrawer";
+import { BillForm } from "./BillForm";
 import {
   markBillPaid,
   markBillUnpaid,
@@ -80,8 +81,17 @@ function buildSteps(r: RankedRisk, config: PaymentCfg): Step[] {
   return steps;
 }
 
-export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: PaymentCfg }) {
+export function PaymentsTable({
+  risks,
+  config,
+  vendors,
+}: {
+  risks: RankedRisk[];
+  config: PaymentCfg;
+  vendors: VendorOption[];
+}) {
   const [selected, setSelected] = useState<RankedRisk | null>(null);
+  const [formTarget, setFormTarget] = useState<RankedRisk | "new" | null>(null);
   const [compact, setCompact] = useState(false);
   const [armedDelete, setArmedDelete] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
@@ -122,6 +132,16 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
           className="ml-auto inline-flex items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           {compact ? "Comfortable" : "Compact"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFormTarget("new")}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3 text-[13px] font-semibold text-accent-fg transition-[filter] duration-150 hover:brightness-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="size-4" aria-hidden>
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Add bill
         </button>
       </div>
 
@@ -230,6 +250,16 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
             )}
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setFormTarget(selected);
+                  setSelected(null);
+                }}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border-strong bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                Edit
+              </button>
               {isPaid(selected.status) ? (
                 <button
                   type="button"
@@ -320,6 +350,25 @@ export function PaymentsTable({ risks, config }: { risks: RankedRisk[]; config: 
               </div>
             </div>
           </>
+        )}
+      </DetailDrawer>
+
+      <DetailDrawer
+        open={formTarget !== null}
+        onClose={() => setFormTarget(null)}
+        title={formTarget === "new" ? "Add bill" : "Edit bill"}
+        subtitle={formTarget && formTarget !== "new" ? formTarget.vendorName : undefined}
+        footer="Saved to your account. The deadline and any cost of delay are recomputed from these values."
+      >
+        {formTarget !== null && (
+          <BillForm
+            bill={formTarget === "new" ? null : formTarget}
+            vendors={vendors}
+            onSaved={() => {
+              setFormTarget(null);
+              setSelected(null);
+            }}
+          />
         )}
       </DetailDrawer>
     </section>

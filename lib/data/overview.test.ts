@@ -24,6 +24,7 @@ function makeData(overrides: Partial<DashboardData> = {}): DashboardData {
     rcmAsOf: "2026-07-15",
     totalRcmPurchases: 0,
     vendorVerifications: [],
+    vendorOptions: [],
     vendorVerificationSummary: {
       total: 0,
       verifiedCount: 0,
@@ -53,6 +54,11 @@ const breached: RankedRisk = {
   totalCostOfDelay: 30000,
   vendorName: "Acme Traders",
   amount: 100000,
+  vendorId: "v1",
+  invoiceAcceptanceDate: "2026-04-01",
+  hasWrittenAgreement: true,
+  agreedPaymentDays: 45,
+  paidDate: null,
 };
 
 // Unactioned + known-ineligible, tax period well before imsAsOf -> auto-accepted

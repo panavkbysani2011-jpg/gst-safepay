@@ -36,7 +36,19 @@ export interface VendorVerificationRow {
 export type RankedRisk = PaymentRiskAssessment & {
   vendorName: string;
   amount: number;
+  // Raw editable fields, so the in-app edit form can prefill without a round-trip.
+  vendorId: string;
+  invoiceAcceptanceDate: string;
+  hasWrittenAgreement: boolean;
+  agreedPaymentDays: number | null;
+  paidDate: string | null;
 };
+
+/** Minimal vendor list for the bill form's supplier picker. */
+export interface VendorOption {
+  id: string;
+  name: string;
+}
 
 export interface DashboardData {
   asOf: string;
@@ -55,6 +67,8 @@ export interface DashboardData {
   rcmAsOf: string;
   totalRcmPurchases: number;
   vendorVerifications: VendorVerificationRow[];
+  /** Supplier picker options for the bill form. */
+  vendorOptions: VendorOption[];
   vendorVerificationSummary: VendorVerificationSummary;
   verifyAsOf: string;
   complianceDeadlines: ComplianceDeadline[];
@@ -145,7 +159,16 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     };
 
     const assessment = assessPaymentRisk(vendor, bill, asOf, ruleConfig.payment);
-    risks.push({ ...assessment, vendorName: vendor.name, amount: bill.amount });
+    risks.push({
+      ...assessment,
+      vendorName: vendor.name,
+      amount: bill.amount,
+      vendorId: bill.vendorId,
+      invoiceAcceptanceDate: bill.invoiceAcceptanceDate,
+      hasWrittenAgreement: bill.hasWrittenAgreement,
+      agreedPaymentDays: bill.agreedPaymentDays,
+      paidDate: bill.paidDate,
+    });
   }
 
   const ranked = rankBillsByRisk(risks) as RankedRisk[];
@@ -207,6 +230,7 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     rcmAsOf: asOf,
     totalRcmPurchases: rcmRowsDb.length,
     vendorVerifications,
+    vendorOptions: vendorRows.map((v) => ({ id: v.id, name: v.name })),
     vendorVerificationSummary,
     verifyAsOf: asOf,
     complianceDeadlines,
