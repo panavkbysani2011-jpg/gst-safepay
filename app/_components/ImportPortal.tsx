@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import {
   clearData,
@@ -814,22 +814,41 @@ function HowItWorks() {
 
 function ClearDataControl() {
   const [armed, setArmed] = useState(false);
+  const [clearing, startClearing] = useTransition();
 
-  // The <form> stays mounted so the submit-in-flight completes even as we
-  // collapse back to the single button (resetting `armed`) on confirm.
+  // Runs the action to completion BEFORE collapsing the confirm row.
+  //
+  // This used to be a submit button whose onClick reset `armed`. That unmounted
+  // the submitter mid-dispatch, so the confirm row vanished (looking like it had
+  // worked) while the submission was cancelled and nothing was ever deleted.
+  // Keeping the <form> mounted did not help: it is the button that carries the
+  // submission. A transition sidesteps the race entirely.
+  function confirmClear() {
+    startClearing(async () => {
+      await clearData();
+      setArmed(false);
+    });
+  }
+
   return (
-    <form action={clearData} className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {armed ? (
         <>
           <span className="text-[12.5px] font-medium text-fg">
             Delete everything you&apos;ve imported?
           </span>
-          <SubmitButton variant="danger" onClick={() => setArmed(false)}>
-            Yes, clear it all
-          </SubmitButton>
+          <button
+            type="button"
+            onClick={confirmClear}
+            disabled={clearing}
+            className={`${BTN_BASE} ${BTN_DANGER}`}
+          >
+            {clearing ? "Clearing…" : "Yes, clear it all"}
+          </button>
           <button
             type="button"
             onClick={() => setArmed(false)}
+            disabled={clearing}
             className={`${BTN_BASE} ${BTN_GHOST}`}
           >
             Cancel
@@ -844,7 +863,7 @@ function ClearDataControl() {
           Clear all my data
         </button>
       )}
-    </form>
+    </div>
   );
 }
 
