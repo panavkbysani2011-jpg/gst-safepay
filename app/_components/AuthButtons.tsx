@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useFormStatus } from "react-dom";
-import { login, signup } from "@/app/auth-actions";
+import { login } from "@/app/auth-actions";
 
 export function AuthButtons() {
   const { pending } = useFormStatus();
@@ -16,14 +17,15 @@ export function AuthButtons() {
       >
         {pending ? "Signing in…" : "Log in"}
       </button>
-      <button
-        type="submit"
-        formAction={signup}
-        disabled={pending}
-        className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface px-5 text-sm font-medium text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none disabled:opacity-60"
+      {/* A LINK, not a submit. Signing up asks for a name and a confirmed
+          password, so it needs its own screen; submitting this form only ever
+          tripped the empty-email validation and looked broken. */}
+      <Link
+        href="/signup"
+        className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-border-strong bg-surface px-5 text-sm font-medium text-fg transition-colors duration-150 hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:outline-none"
       >
         Create account
-      </button>
+      </Link>
     </div>
   );
 }

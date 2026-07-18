@@ -10,7 +10,7 @@ import {
   isNavActive,
 } from "./nav-config";
 
-export function AppSidebar({ email }: { email: string }) {
+export function AppSidebar({ email, fullName }: { email: string; fullName?: string | null }) {
   const pathname = usePathname();
 
   return (
@@ -69,7 +69,7 @@ export function AppSidebar({ email }: { email: string }) {
         {IMPORT_ITEM.label}
       </Link>
 
-      <AccountMenu email={email} />
+      <AccountMenu email={email} fullName={fullName} />
     </aside>
   );
 }

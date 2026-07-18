@@ -5,9 +5,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { clientIp, rateLimit, retryPhrase } from "@/lib/rate-limit";
+import { parseSignupForm } from "@/lib/signupForm";
 
 function loginUrl(params: Record<string, string>): string {
   return `/login?${new URLSearchParams(params).toString()}`;
+}
+
+function signupUrl(params: Record<string, string>): string {
+  return `/signup?${new URLSearchParams(params).toString()}`;
 }
 
 // Origin of the current request, for building absolute email-redirect URLs.
@@ -42,19 +47,35 @@ export async function signup(formData: FormData) {
   const ip = await clientIp();
   const limited = await rateLimit(`signup:${ip}`, 10, 600);
   if (!limited.ok) {
-    redirect(loginUrl({ error: `Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
+    redirect(signupUrl({ error: `Too many attempts. Try again in ${retryPhrase(limited.retryAfterSeconds)}.` }));
   }
 
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-
-  if (password.length < 6) {
-    redirect(loginUrl({ error: "Password must be at least 6 characters." }));
-  }
+  const parsed = parseSignupForm({
+    fullName: String(formData.get("fullName") ?? ""),
+    username: String(formData.get("username") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+    confirmPassword: String(formData.get("confirmPassword") ?? ""),
+  });
+  // Errors go back to the signup screen, not login, so the user keeps their
+  // context and does not have to retype everything on a different page.
+  if (!parsed.ok) redirect(signupUrl({ error: parsed.message }));
+  const { fullName, username, email, password } = parsed.value;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) redirect(loginUrl({ error: error.message }));
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    // Stored on the account so the app can greet them by name instead of
+    // guessing from the email address.
+    options: {
+      data: {
+        full_name: fullName,
+        username: username && username.length > 0 ? username : null,
+      },
+    },
+  });
+  if (error) redirect(signupUrl({ error: error.message }));
 
   // If email confirmation is enabled in Supabase, there is no session yet.
   if (!data.session) {
