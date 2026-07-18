@@ -15,7 +15,7 @@
 import { parseAiMappingResponse, type TargetField } from "./fieldMapping";
 
 const DEFAULT_ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions";
-const DEFAULT_MODEL = "meta/llama-3.3-70b-instruct";
+const DEFAULT_MODEL = "meta/llama-3.1-8b-instruct";
 const TIMEOUT_MS = 12_000;
 /** Only a taste of the data is needed to tell a date column from an amount. */
 const MAX_SAMPLE_ROWS = 2;
