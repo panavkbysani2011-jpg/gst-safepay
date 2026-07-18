@@ -22,6 +22,9 @@ export default async function AppLayout({
 }) {
   const user = await requireUser();
   const email = user.email ?? "";
+  // Set at signup; older accounts have none, and the menu falls back to the email.
+  const fullName =
+    typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
   const now = new Date();
   const asOf = asOfFormat.format(now);
   const asOfIso = todayInBusinessZone(now);
@@ -38,7 +41,7 @@ export default async function AppLayout({
         Skip to content
       </a>
 
-      <AppSidebar email={email} />
+      <AppSidebar email={email} fullName={fullName} />
 
       <div className="flex min-h-screen flex-col">
         <AppTopbar email={email} asOf={asOf} />

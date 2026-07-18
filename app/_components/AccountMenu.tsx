@@ -12,8 +12,11 @@ function friendlyName(email: string): string {
 
 // Sidebar profile card that opens an account menu (Settings + Sign out).
 // Uses native <details> so it needs no click-outside JS and stays accessible.
-export function AccountMenu({ email }: { email: string }) {
-  const initial = (email.trim()[0] ?? "?").toUpperCase();
+export function AccountMenu({ email, fullName }: { email: string; fullName?: string | null }) {
+  // Prefer the name they gave at signup; fall back to guessing from the email
+  // for accounts created before the signup form asked for one.
+  const displayName = fullName?.trim() ? fullName.trim() : friendlyName(email);
+  const initial = (displayName[0] ?? "?").toUpperCase();
   return (
     <details className="group relative mt-auto">
       <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-xl border border-border bg-surface p-2.5 transition-colors hover:border-border-strong focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&::-webkit-details-marker]:hidden">
@@ -25,7 +28,7 @@ export function AccountMenu({ email }: { email: string }) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13px] font-semibold text-fg">
-            {friendlyName(email)}
+            {displayName}
           </span>
           <span className="block truncate text-[11px] text-muted">{email}</span>
         </span>

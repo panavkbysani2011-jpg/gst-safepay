@@ -76,6 +76,7 @@ export async function proxy(request: NextRequest) {
   const PUBLIC_PATHS = new Set([
     "/",
     "/login",
+    "/signup",
     "/forgot-password",
     "/reset-password",
     "/auth/callback",
