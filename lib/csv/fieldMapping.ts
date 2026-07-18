@@ -21,6 +21,13 @@ export interface TargetField {
   aliases: string[];
   /** For type "enum": the allowed canonical values. */
   enumValues?: string[];
+  /**
+   * Other field keys whose column can stand in for this one when it would
+   * otherwise go unmapped. Real exports often identify a supplier by name or
+   * GSTIN with no code column at all; the vendor linker resolves any of the
+   * three, so blocking the import for a missing "id" would be wrong.
+   */
+  satisfiedBy?: string[];
 }
 
 export type ImportKind =
@@ -44,21 +51,21 @@ export const FIELD_SPECS: Record<ImportKind, TargetField[]> = {
     { key: "udyamCategory", label: "MSME category", required: false, type: "enum", enumValues: ["micro", "small", "medium"], aliases: ["udyamcategory", "msmecategory", "category", "enterprisetype", "msmetype"] },
   ],
   bills: [
-    { key: "id", label: "Bill / invoice no.", required: true, type: "string", aliases: ["id", "billno", "billnumber", "invoiceno", "invoicenumber", "voucherno", "docno", "documentno", "billid"] },
-    { key: "vendorId", label: "Vendor (id, name or GSTIN)", required: true, type: "string", aliases: ["vendorid", "vendorcode", "vendor", "supplier", "supplierid", "party", "partycode", "partyname", "suppliercode", "manufacturer", "ledgercode"] },
-    { key: "invoiceAcceptanceDate", label: "Invoice / bill date", required: true, type: "date", aliases: ["invoiceacceptancedate", "invoicedate", "billdate", "date", "docdate", "documentdate", "voucherdate", "acceptancedate", "grndate"] },
+    { key: "id", label: "Bill / invoice no.", required: true, type: "string", aliases: ["id", "billno", "billnumber", "invoiceno", "invoicenumber", "invno", "voucherno", "vchno", "vch", "docno", "documentno", "billid", "sno", "srno", "slno", "serialno", "refno", "reference"] },
+    { key: "vendorId", label: "Vendor (id, name or GSTIN)", required: true, type: "string", satisfiedBy: ["vendorName", "vendorGstin"], aliases: ["vendorid", "vendorcode", "vendor", "supplier", "supplierid", "party", "partycode", "partyname", "suppliercode", "manufacturer", "ledgercode"] },
+    { key: "invoiceAcceptanceDate", label: "Invoice / bill date", required: true, type: "date", aliases: ["invoiceacceptancedate", "invoicedate", "invoicedt", "invdate", "billdate", "billdt", "date", "docdate", "documentdate", "voucherdate", "vchdate", "trndate", "transactiondate", "acceptancedate", "grndate"] },
     { key: "amount", label: "Amount", required: true, type: "number", aliases: ["amount", "invoiceamount", "billamount", "value", "invoicevalue", "netamount", "total", "totalamount", "taxablevalue", "grossamount", "billedamount"] },
     { key: "hasWrittenAgreement", label: "Written agreement?", required: false, type: "boolean", aliases: ["haswrittenagreement", "writtenagreement", "agreement", "hasagreement", "contract"] },
     { key: "agreedPaymentDays", label: "Agreed payment term (days)", required: false, type: "number", aliases: ["agreedpaymentdays", "paymentdays", "creditdays", "creditperiod", "terms", "paymentterms", "duedays"] },
     { key: "paidDate", label: "Paid date", required: false, type: "date", aliases: ["paiddate", "paymentdate", "settleddate", "clearingdate", "paidon"] },
     // Optional, and only used to link (or create) the vendor accurately — these
     // are not stored on the bill itself.
-    { key: "vendorName", label: "Vendor name (to match/create)", required: false, type: "string", aliases: ["vendorname", "suppliername", "partyname", "manufacturer", "companyname"] },
+    { key: "vendorName", label: "Vendor name (to match/create)", required: false, type: "string", aliases: ["vendorname", "suppliername", "partyname", "ledgername", "ledger", "accountname", "manufacturer", "companyname"] },
     { key: "vendorGstin", label: "Vendor GSTIN (to match/create)", required: false, type: "string", aliases: ["vendorgstin", "suppliergstin", "partygstin", "gstin", "gstno", "gstinno"] },
   ],
   ims: [
     { key: "id", label: "Record ID", required: true, type: "string", aliases: ["id", "invoiceid", "recordid", "srno", "slno", "serialno"] },
-    { key: "vendorId", label: "Vendor ID / GSTIN", required: true, type: "string", aliases: ["vendorid", "vendorcode", "supplierid", "suppliergstin", "gstin", "party"] },
+    { key: "vendorId", label: "Vendor ID / GSTIN", required: true, type: "string", satisfiedBy: ["vendorName"], aliases: ["vendorid", "vendorcode", "supplierid", "suppliergstin", "gstin", "party"] },
     { key: "vendorName", label: "Vendor name", required: true, type: "string", aliases: ["vendorname", "vendor", "supplier", "suppliername", "party", "partyname"] },
     { key: "invoiceNo", label: "Invoice no.", required: true, type: "string", aliases: ["invoiceno", "invoicenumber", "billno", "docno", "invoice"] },
     { key: "taxPeriod", label: "Tax period (YYYY-MM)", required: true, type: "string", aliases: ["taxperiod", "period", "returnperiod", "month", "taxmonth"] },
@@ -69,7 +76,7 @@ export const FIELD_SPECS: Record<ImportKind, TargetField[]> = {
   ],
   rcm: [
     { key: "id", label: "Record ID", required: true, type: "string", aliases: ["id", "recordid", "srno", "slno", "purchaseid"] },
-    { key: "vendorId", label: "Vendor ID / code", required: true, type: "string", aliases: ["vendorid", "vendorcode", "supplierid", "party", "partycode"] },
+    { key: "vendorId", label: "Vendor ID / code", required: true, type: "string", satisfiedBy: ["vendorName"], aliases: ["vendorid", "vendorcode", "supplierid", "party", "partycode"] },
     { key: "vendorName", label: "Vendor name", required: true, type: "string", aliases: ["vendorname", "vendor", "supplier", "suppliername", "party", "partyname"] },
     { key: "supplierUnregistered", label: "Supplier unregistered?", required: false, type: "boolean", aliases: ["supplierunregistered", "unregistered", "isunregistered", "urd", "unregistereddealer"] },
     { key: "supplyType", label: "Supply type", required: false, type: "enum", enumValues: ["goods", "services"], aliases: ["supplytype", "type", "goodsorservices", "natureofsupply"] },
@@ -153,6 +160,21 @@ export function suggestMapping(
     if (usedHeaders.has(p.header)) continue; // header already used
     mapping[p.fieldKey] = p.header;
     usedHeaders.add(p.header);
+  }
+
+  // Backfill: a required field can borrow the column of an equivalent field
+  // (e.g. a bill's vendor "id" is satisfied by the supplier's name or GSTIN,
+  // which the vendor linker resolves just as well). Sharing the column is
+  // correct here, so this deliberately ignores the no-reuse rule above.
+  for (const f of fields) {
+    if (!f.required || mapping[f.key] !== null || !f.satisfiedBy) continue;
+    for (const altKey of f.satisfiedBy) {
+      const alt = mapping[altKey];
+      if (alt) {
+        mapping[f.key] = alt;
+        break;
+      }
+    }
   }
 
   const unmappedRequired = fields
