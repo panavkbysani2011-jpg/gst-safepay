@@ -1,7 +1,19 @@
 // TEMPORARY owner-only diagnostic for the AI brief. Delete once the brief works.
-// Exercises the exact NVIDIA call server-side and reports why it succeeds or
-// fails. Never returns the API key; auth-gated so only the signed-in owner can hit it.
+// Probes several NVIDIA models with the prod key and reports which the account
+// can actually invoke (a 404 "not found for account" means no access). Never
+// returns the key; auth-gated so only the signed-in owner can hit it.
 import { requireUser } from "@/lib/auth";
+
+const CANDIDATES = [
+  process.env.AI_MAPPING_MODEL ?? "meta/llama-3.3-70b-instruct",
+  "meta/llama-3.3-70b-instruct",
+  "meta/llama-3.1-8b-instruct",
+  "meta/llama-3.1-70b-instruct",
+  "mistralai/mixtral-8x7b-instruct-v0.1",
+  "nvidia/llama-3.1-nemotron-70b-instruct",
+  "moonshotai/kimi-k2-instruct",
+  "moonshotai/kimi-k2.6",
+];
 
 export async function GET() {
   await requireUser();
@@ -10,60 +22,39 @@ export async function GET() {
   const endpoint =
     process.env.AI_MAPPING_ENDPOINT ??
     "https://integrate.api.nvidia.com/v1/chat/completions";
-  const model = process.env.AI_MAPPING_MODEL ?? "moonshotai/kimi-k2.6";
+  if (!key) return Response.json({ keyPresent: false });
 
-  const out: Record<string, unknown> = {
-    keyPresent: Boolean(key),
-    keyLength: key?.length ?? 0,
-    keyPrefixOk: key?.startsWith("nvapi-") ?? false,
-    endpoint,
-    model,
-  };
-  if (!key) return Response.json(out);
-
-  const t0 = Date.now();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 45_000);
-  try {
-    const r = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "user", content: "Reply with the single word OK." }],
-        temperature: 0,
-        top_p: 1,
-        max_tokens: 64,
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-    out.httpStatus = r.status;
-    out.elapsedMs = Date.now() - t0;
-    const text = await r.text();
-    out.bodyLength = text.length;
-    out.bodySample = text.slice(0, 500);
+  const seen = new Set<string>();
+  const results: unknown[] = [];
+  for (const model of CANDIDATES) {
+    if (seen.has(model)) continue;
+    seen.add(model);
+    const t0 = Date.now();
     try {
-      const j = JSON.parse(text) as {
-        choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
-      };
-      out.contentSample =
-        typeof j?.choices?.[0]?.message?.content === "string"
-          ? (j.choices[0].message.content as string).slice(0, 200)
-          : null;
-      out.finishReason = j?.choices?.[0]?.finish_reason ?? null;
-    } catch {
-      out.parseError = true;
+      const r = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "Say OK." }],
+          temperature: 0,
+          max_tokens: 8,
+          stream: false,
+        }),
+      });
+      const detail = r.ok ? "" : (await r.text()).slice(0, 140);
+      results.push({ model, status: r.status, ok: r.ok, ms: Date.now() - t0, detail });
+    } catch (e) {
+      results.push({
+        model,
+        error: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+        ms: Date.now() - t0,
+      });
     }
-  } catch (e) {
-    out.elapsedMs = Date.now() - t0;
-    out.errorType = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-  } finally {
-    clearTimeout(timer);
   }
-  return Response.json(out);
+  return Response.json({ keyPresent: true, endpoint, results });
 }
