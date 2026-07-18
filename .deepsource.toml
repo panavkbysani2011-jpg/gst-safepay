@@ -1,0 +1,27 @@
+version = 1
+
+# Without this, DeepSource analyses the repo as plain browser scripts and reports
+# hundreds of false positives: every `export function` is flagged as a global-scope
+# declaration, React's useEffect cleanup return is flagged as a stray return, and
+# test helpers are held to production naming rules. The real gate is ESLint +
+# tsc + vitest, which run clean; this config makes DeepSource agree with reality.
+
+test_patterns = [
+  "**/*.test.ts",
+  "**/*.test.tsx",
+]
+
+exclude_patterns = [
+  "node_modules/**",
+  ".next/**",
+  "prisma/migrations/**",
+]
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  plugins = ["react"]
+  environment = ["nodejs", "browser"]
+  module_system = "es-modules"
+  dialect = "typescript"

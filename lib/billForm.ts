@@ -64,7 +64,7 @@ export function billFormFromEntries(get: (k: string) => string | null): unknown 
     vendorId: get("vendorId") ?? "",
     invoiceAcceptanceDate: get("invoiceAcceptanceDate") ?? "",
     // Empty stays NaN so the schema reports "enter the amount" rather than 0.
-    amount: amount === "" ? Number.NaN : Number(amount.replace(/[₹,\s]/g, "")),
+    amount: amount === "" ? Number.NaN : Number(amount.replace(/[₹,\s]/gu, "")),
     hasWrittenAgreement: get("hasWrittenAgreement") === "on",
     agreedPaymentDays: days === "" ? null : Number(days),
     paidDate: paid === "" ? null : paid,

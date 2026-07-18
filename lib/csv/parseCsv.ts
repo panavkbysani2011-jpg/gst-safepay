@@ -39,7 +39,7 @@ function emptyToNull(value: unknown): string | null {
 function toNumber(value: unknown): number {
   const s = String(value ?? "")
     .trim()
-    .replace(/[₹,\s]/g, "")
+    .replace(/[₹,\s]/gu, "")
     .replace(/^\+/, "");
   return s === "" ? NaN : Number(s);
 }
@@ -154,7 +154,7 @@ function parseRows<T>(
   // Structural problems the parser hit (unbalanced quotes, ragged rows).
   for (const e of parsed.errors) {
     const rowNumber = typeof e.row === "number" ? e.row + 2 : 1;
-    errors.push({ row: rowNumber, message: `Could not read this row. Check for stray quotes or commas.` });
+    errors.push({ row: rowNumber, message: "Could not read this row. Check for stray quotes or commas." });
   }
 
   if (parsed.data.length === 0) {
