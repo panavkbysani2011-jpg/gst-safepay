@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { assessPaymentRisk } from "@/lib/rules/paymentDeadline";
 import { rankBillsByRisk } from "@/lib/rules/prioritize";
@@ -80,8 +81,12 @@ export interface DashboardData {
   ruleConfig: RuleConfig;
 }
 
-/** Reads vendors + bills from the DB and runs the deterministic rule engine over them. */
-export async function getDashboardData(ownerId: string): Promise<DashboardData> {
+/**
+ * Reads vendors + bills from the DB and runs the deterministic rule engine over
+ * them. Request-cached: if more than one component on a page needs it, the six
+ * queries below run once, not once per caller.
+ */
+export const getDashboardData = cache(async (ownerId: string): Promise<DashboardData> => {
   const [
     ruleConfig,
     vendorRows,
@@ -238,4 +243,4 @@ export async function getDashboardData(ownerId: string): Promise<DashboardData> 
     totalCompliance: complianceRowsDb.length,
     ruleConfig,
   };
-}
+});
