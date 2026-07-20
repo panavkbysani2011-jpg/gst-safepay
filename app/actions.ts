@@ -14,6 +14,7 @@ import {
 } from "@/lib/csv/parseCsv";
 import { fileToCsv } from "@/lib/csv/toCsv";
 import { planVendorLinks } from "@/lib/csv/vendorLink";
+import { dedupeById, duplicateNote } from "@/lib/csv/dedupeById";
 
 export interface UploadResult {
   ok: boolean;
@@ -81,8 +82,9 @@ export async function uploadVendorsCsv(
   if (!read.ok) return fileErrorResult(read.message);
 
   const { valid, errors } = parseVendorsCsv(read.csv);
+  const { rows, duplicateCount } = dedupeById(valid);
   await writeInBatches(
-    valid.map((v) =>
+    rows.map((v) =>
       db.vendor.upsert({
         where: { ownerId_id: { ownerId: user.id, id: v.id } },
         create: { ...v, ownerId: user.id },
@@ -100,10 +102,10 @@ export async function uploadVendorsCsv(
   revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
-    message: `Imported ${valid.length} vendor(s)${
+    message: `Imported ${rows.length} vendor(s)${
       errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
-    }.`,
-    inserted: valid.length,
+    }.${duplicateNote(duplicateCount)}`,
+    inserted: rows.length,
     errors,
   };
 }
@@ -129,7 +131,8 @@ export async function uploadBillsCsv(
     where: { ownerId: user.id },
     select: { id: true, name: true, gstin: true },
   });
-  const plan = planVendorLinks(valid, existingVendors);
+  const { rows, duplicateCount } = dedupeById(valid);
+  const plan = planVendorLinks(rows, existingVendors);
 
   // Seeded vendors must exist before the bills that reference them. `update: {}`
   // so a concurrent/duplicate run never clobbers a vendor the user has since
@@ -156,7 +159,7 @@ export async function uploadBillsCsv(
   }
 
   await writeInBatches(
-    valid.map((b) => {
+    rows.map((b) => {
       // Resolved for every non-blank ref (matched or seeded); fall back to the
       // raw ref so a row can never silently point nowhere.
       const vendorId = plan.resolved.get(b.vendorId.trim()) ?? b.vendorId;
@@ -177,7 +180,7 @@ export async function uploadBillsCsv(
       });
     })
   );
-  const inserted = valid.length;
+  const inserted = rows.length;
   const createdVendors = plan.toCreate.length;
 
   revalidatePath("/", "layout");
@@ -187,7 +190,7 @@ export async function uploadBillsCsv(
       createdVendors
         ? `, and added ${createdVendors} new vendor(s). Set their GSTIN and MSME status on the Vendors page so the 45-day rule can apply`
         : ""
-    }${errors.length ? `, skipped ${errors.length} invalid row(s)` : ""}.`,
+    }${errors.length ? `, skipped ${errors.length} invalid row(s)` : ""}.${duplicateNote(duplicateCount)}`,
     inserted,
     errors,
   };
@@ -205,8 +208,9 @@ export async function uploadImsCsv(
   if (!read.ok) return fileErrorResult(read.message);
 
   const { valid, errors } = parseImsCsv(read.csv);
+  const { rows, duplicateCount } = dedupeById(valid);
   await writeInBatches(
-    valid.map((inv) =>
+    rows.map((inv) =>
       db.imsInvoice.upsert({
         where: { ownerId_id: { ownerId: user.id, id: inv.id } },
         create: { ...inv, ownerId: user.id },
@@ -227,10 +231,10 @@ export async function uploadImsCsv(
   revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
-    message: `Imported ${valid.length} IMS invoice(s)${
+    message: `Imported ${rows.length} IMS invoice(s)${
       errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
-    }.`,
-    inserted: valid.length,
+    }.${duplicateNote(duplicateCount)}`,
+    inserted: rows.length,
     errors,
   };
 }
@@ -247,8 +251,9 @@ export async function uploadRcmCsv(
   if (!read.ok) return fileErrorResult(read.message);
 
   const { valid, errors } = parseRcmCsv(read.csv);
+  const { rows, duplicateCount } = dedupeById(valid);
   await writeInBatches(
-    valid.map((p) =>
+    rows.map((p) =>
       db.rcmPurchase.upsert({
         where: { ownerId_id: { ownerId: user.id, id: p.id } },
         create: { ...p, ownerId: user.id },
@@ -269,10 +274,10 @@ export async function uploadRcmCsv(
   revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
-    message: `Imported ${valid.length} RCM purchase(s)${
+    message: `Imported ${rows.length} RCM purchase(s)${
       errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
-    }.`,
-    inserted: valid.length,
+    }.${duplicateNote(duplicateCount)}`,
+    inserted: rows.length,
     errors,
   };
 }
@@ -289,8 +294,9 @@ export async function uploadComplianceCsv(
   if (!read.ok) return fileErrorResult(read.message);
 
   const { valid, errors } = parseComplianceCsv(read.csv);
+  const { rows, duplicateCount } = dedupeById(valid);
   await writeInBatches(
-    valid.map((d) =>
+    rows.map((d) =>
       db.complianceDeadline.upsert({
         where: { ownerId_id: { ownerId: user.id, id: d.id } },
         create: { ...d, ownerId: user.id },
@@ -309,10 +315,10 @@ export async function uploadComplianceCsv(
   revalidatePath("/", "layout");
   return {
     ok: errors.length === 0,
-    message: `Imported ${valid.length} compliance deadline(s)${
+    message: `Imported ${rows.length} compliance deadline(s)${
       errors.length ? `, skipped ${errors.length} invalid row(s)` : ""
-    }.`,
-    inserted: valid.length,
+    }.${duplicateNote(duplicateCount)}`,
+    inserted: rows.length,
     errors,
   };
 }
