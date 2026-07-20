@@ -278,9 +278,15 @@ function PreviewPanel({
       )}
 
       {rows.length === 0 ? (
-        <p className="text-[12.5px] text-danger">
-          Nothing to import. Fix the errors above and choose the file again.
-        </p>
+        <div className="rounded-lg bg-danger-soft px-3 py-2 text-[12px] text-danger">
+          <p className="font-medium">None of the rows could be read.</p>
+          <p className="mt-0.5 text-[11.5px]">
+            {errors.length > 0
+              ? "The reasons are listed above. Usually a column was matched to the wrong field, so go back and check the date and amount especially."
+              : "The file looks empty, or its rows had no usable values."}{" "}
+            Nothing was saved.
+          </p>
+        </div>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -409,13 +415,24 @@ function MappingPanel({
 }) {
   const isBlocked = unmappedRequired.length > 0;
   const aiFilledSet = new Set(aiFilled);
+  const matchedCount = fields.filter((f) => (mapping[f.key] ?? "") !== "").length;
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border-strong bg-surface-2/60 p-3.5">
       <div>
-        <p className="text-[12.5px] font-semibold text-fg">Match your columns</p>
+        <p className="text-[12.5px] font-semibold text-fg">Check the column matches</p>
         <p className="mt-0.5 text-[11.5px] text-muted">
-          We guessed which of your columns feeds each field. Fix any that look
-          wrong, then continue. Nothing is saved yet.
+          We matched your file&apos;s columns to what each field needs. The ones with a{" "}
+          <span className="font-semibold text-success">✓</span> are set. You only need to
+          touch anything marked below. Nothing is saved yet.
+        </p>
+        <p className="mt-1.5 text-[11.5px] font-medium text-fg">
+          {matchedCount} of {fields.length} matched automatically
+          {isBlocked && (
+            <span className="text-danger">
+              {" "}· {unmappedRequired.length} still {unmappedRequired.length === 1 ? "needs" : "need"} a column
+            </span>
+          )}
+          .
         </p>
         {isAiBusy && (
           <p className="mt-1 text-[11.5px] text-accent-text">
@@ -430,10 +447,18 @@ function MappingPanel({
           const sampleVal = selected && sampleRow ? sampleRow[selected] ?? "" : "";
           const isMissing = f.required && selected === "";
           return (
-            <div key={f.key} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
-              <label className="min-w-[8.5rem] flex-1 text-[12.5px] font-medium text-fg">
+            <div
+              key={f.key}
+              className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 ${
+                isMissing ? "bg-danger-soft/40" : ""
+              }`}
+            >
+              <label className="flex min-w-[8.5rem] flex-1 items-center gap-1.5 text-[12.5px] font-medium text-fg">
+                <span aria-hidden className={`shrink-0 ${selected !== "" ? "text-success" : isMissing ? "text-danger" : "text-faint"}`}>
+                  {selected !== "" ? "✓" : isMissing ? "!" : "–"}
+                </span>
                 {f.label}
-                {f.required && <span className="ml-0.5 text-danger">*</span>}
+                {f.required && <span className="text-danger">*</span>}
                 {aiFilledSet.has(f.key) && (
                   <span
                     className="ml-1.5 rounded bg-accent-soft px-1 py-0.5 text-[9.5px] font-semibold tracking-wide text-accent-text uppercase"
@@ -463,7 +488,13 @@ function MappingPanel({
                 className="min-w-[5rem] flex-1 truncate text-[11px] text-muted"
                 title={sampleVal}
               >
-                {sampleVal ? `e.g. ${sampleVal}` : ""}
+                {selected !== ""
+                  ? sampleVal
+                    ? `e.g. ${sampleVal}`
+                    : ""
+                  : f.required
+                    ? ""
+                    : "skipped, not needed"}
               </span>
             </div>
           );
